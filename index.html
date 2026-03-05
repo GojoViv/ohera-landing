@@ -4,557 +4,685 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>O'HERA — Own Your Era</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;1,200;1,300&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 100%; height: 100%; overflow: hidden; background: #080808; }
-
-/* ── CURSOR ── */
+html { height: 100%; }
+body { width: 100%; min-height: 100%; background: #080808; overflow: hidden; }
 * { cursor: none !important; }
-#gem-cursor {
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  width: 28px;
-  height: 28px;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  transition: opacity 0.3s;
-  will-change: transform;
-}
-#gem-cursor img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0 6px rgba(201,168,76,0.8));
-}
-#default-cursor {
-  position: fixed;
-  pointer-events: none;
-  z-index: 9998;
-  width: 10px;
-  height: 10px;
-  border: 1px solid rgba(201,168,76,0.7);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: opacity 0.3s;
-}
 
-/* ── ENTRY SCREEN ── */
+/* ─── CUSTOM CURSOR ─── */
+#cursor-dot {
+  position: fixed; pointer-events: none; z-index: 9999;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(201,168,76,0.9);
+  transform: translate(-50%,-50%);
+  transition: opacity 0.3s, width 0.2s, height 0.2s;
+  mix-blend-mode: difference;
+}
+#gem-cursor {
+  position: fixed; pointer-events: none; z-index: 10000;
+  width: 32px; height: 32px;
+  transform: translate(-50%,-50%);
+  opacity: 0;
+  will-change: left, top, width, height;
+  filter: drop-shadow(0 0 8px rgba(201,168,76,0.9));
+}
+#gem-cursor img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ─── ENTRY PORTAL ─── */
 #entry {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
   background: #080808;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
-#entry::before {
+
+/* Subtle vignette */
+#entry::after {
   content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%);
-  pointer-events: none;
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 70% 55% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%);
 }
 
-/* Wordmark */
-.wordmark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Wordmark container — holds PNG + gem overlay */
+.wm-container {
   position: relative;
+  width: min(820px, 88vw);
+  /* PNG aspect ratio 14457:4485 = 3.22:1 */
+  aspect-ratio: 3.22 / 1;
   user-select: none;
 }
-.wordmark-part {
-  font-family: 'Cormorant Garamond', serif;
-  font-weight: 200;
-  font-size: clamp(80px, 14vw, 180px);
-  letter-spacing: 0.05em;
-  color: #f0ece4;
-  line-height: 1;
-}
-.wordmark-apostrophe-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* sized to match the apostrophe visual weight */
-  width: clamp(36px, 5.5vw, 72px);
-  height: clamp(36px, 5.5vw, 72px);
-  margin: 0 clamp(2px, 0.4vw, 6px);
-  vertical-align: middle;
-  margin-bottom: clamp(20px, 3.5vw, 50px);
-}
-#wordmark-gem {
-  width: 100%;
-  height: 100%;
+
+.wm-logo-png {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(201,168,76,0.6));
-  transition: opacity 0.5s ease;
+  /* PNG is RGBA with transparent bg — displays clean on black */
 }
-/* ghost apostrophe shown after gem flies away */
-.apostrophe-ghost {
+
+/* The interactive gem overlay — positioned precisely over apostrophe in PNG */
+/* Gem is at ~20.2%-24.3% left, ~1.3%-23.2% top within the PNG */
+#gem-overlay {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Cormorant Garamond', serif;
-  font-weight: 200;
-  font-size: clamp(80px, 14vw, 180px);
-  color: rgba(201,168,76,0.15);
+  left: 20.2%;
+  top: 1.3%;
+  width: 4.1%;   /* 24.3% - 20.2% */
+  height: 21.9%; /* 23.2% - 1.3% */
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(201,168,76,0.5));
+  transition: opacity 0.45s ease;
+  transform-origin: center center;
+}
+
+/* Ghost mark left when gem flies away */
+#gem-ghost {
+  position: absolute;
+  left: 20.2%; top: 1.3%;
+  width: 4.1%; height: 21.9%;
   opacity: 0;
-  transition: opacity 0.4s ease;
-  line-height: 1;
+  transition: opacity 0.5s ease 0.2s;
   pointer-events: none;
-}
-
-.tagline {
-  margin-top: clamp(24px, 4vw, 44px);
-  font-family: 'Montserrat', sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
   font-weight: 300;
-  font-size: clamp(9px, 1.1vw, 13px);
-  letter-spacing: 0.5em;
-  text-transform: uppercase;
-  color: rgba(240,236,228,0.35);
+  font-style: italic;
+  font-size: 3vw; /* matches relative size in PNG */
+  color: rgba(201,168,76,0.12);
+  line-height: 1;
 }
 
-/* ACCESS button — bottom right */
+.tagline-entry {
+  margin-top: clamp(28px, 4.5vh, 52px);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 200;
+  font-size: clamp(9px, 1.05vw, 12px);
+  letter-spacing: 0.58em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ─── ACCESS BUTTON ─── */
 #access-btn {
   position: fixed;
-  bottom: clamp(28px, 5vh, 56px);
-  right: clamp(28px, 5vw, 64px);
-  z-index: 200;
-  background: transparent;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  bottom: clamp(32px, 5.5vh, 60px);
+  right: clamp(32px, 5.5vw, 72px);
+  z-index: 600;
+  background: none; border: none;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 7px;
   opacity: 0;
-  transition: opacity 1s ease 0.6s;
+  transform: translateY(8px);
+  transition: opacity 0.9s ease 0.5s, transform 0.9s ease 0.5s;
 }
-#access-btn .btn-label {
+#access-btn.show { opacity: 1; transform: translateY(0); }
+.btn-label {
   font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
-  font-size: clamp(8px, 0.9vw, 11px);
-  letter-spacing: 0.4em;
+  font-weight: 200;
+  font-size: clamp(8px, 0.8vw, 10px);
+  letter-spacing: 0.48em;
   text-transform: uppercase;
-  color: rgba(201,168,76,0.7);
-  transition: color 0.3s;
+  color: rgba(201,168,76,0.65);
+  transition: color 0.35s, letter-spacing 0.35s;
 }
-#access-btn .btn-line {
-  width: 40px;
-  height: 1px;
-  background: linear-gradient(to left, rgba(201,168,76,0.7), transparent);
-  transition: width 0.4s ease;
+.btn-rule {
+  width: 36px; height: 1px;
+  background: linear-gradient(to left, rgba(201,168,76,0.65), transparent);
+  transition: width 0.4s ease, opacity 0.35s;
 }
-#access-btn:hover .btn-label { color: rgba(201,168,76,1); }
-#access-btn:hover .btn-line { width: 64px; }
-#access-btn.visible { opacity: 1; }
+#access-btn:hover .btn-label { color: rgba(201,168,76,1); letter-spacing: 0.52em; }
+#access-btn:hover .btn-rule { width: 60px; opacity: 1; }
+/* Hide button during/after vault open */
+#access-btn.hide { opacity: 0 !important; pointer-events: none; }
 
-/* ── VAULT TRANSITION ── */
-#vault-left, #vault-right {
-  position: fixed;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  z-index: 300;
-  background: #080808;
-  transform: translateX(0);
-  transition: transform 1.1s cubic-bezier(0.76, 0, 0.24, 1);
+/* ─── VAULT TRANSITION ─── */
+#vault-l, #vault-r {
+  position: fixed; top: 0; height: 100%; width: 50%; z-index: 700;
   pointer-events: none;
+  background: #080808;
+  transition: transform 1.2s cubic-bezier(0.77, 0, 0.18, 1);
 }
-#vault-left { left: 0; }
-#vault-right { right: 0; }
-/* gold seam */
-#vault-left::after {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 1px; height: 100%;
-  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.8) 30%, rgba(201,168,76,0.8) 70%, transparent);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-#vault-right::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 1px; height: 100%;
-  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.8) 30%, rgba(201,168,76,0.8) 70%, transparent);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-body.vault-cracking #vault-left::after,
-body.vault-cracking #vault-right::before { opacity: 1; }
-body.vault-open #vault-left  { transform: translateX(-100%); }
-body.vault-open #vault-right { transform: translateX(100%); }
+#vault-l { left: 0; transform: translateX(0); }
+#vault-r { right: 0; transform: translateX(0); }
 
-/* ── MAIN SITE ── */
-#main-site {
-  position: fixed;
-  inset: 0;
-  overflow-y: auto;
+/* Gold seam */
+#vault-l::after {
+  content: ''; position: absolute; top: 0; right: -1px;
+  width: 2px; height: 100%;
+  background: linear-gradient(to bottom, transparent 0%, rgba(201,168,76,0.9) 20%, rgba(255,237,160,1) 50%, rgba(201,168,76,0.9) 80%, transparent 100%);
   opacity: 0;
-  transition: opacity 0.6s ease 0.5s;
+  box-shadow: 0 0 12px 2px rgba(201,168,76,0.6);
+  transition: opacity 0.15s;
+}
+#vault-r::before {
+  content: ''; position: absolute; top: 0; left: -1px;
+  width: 2px; height: 100%;
+  background: linear-gradient(to bottom, transparent 0%, rgba(201,168,76,0.9) 20%, rgba(255,237,160,1) 50%, rgba(201,168,76,0.9) 80%, transparent 100%);
+  opacity: 0;
+  box-shadow: 0 0 12px 2px rgba(201,168,76,0.6);
+  transition: opacity 0.15s;
+}
+body.cracking #vault-l::after,
+body.cracking #vault-r::before { opacity: 1; }
+body.vault-open #vault-l { transform: translateX(-101%); }
+body.vault-open #vault-r { transform: translateX(101%); }
+
+/* ─── MAIN SITE ─── */
+#main-site {
+  position: fixed; inset: 0;
+  overflow-y: auto;
   background: #080808;
   color: #f0ece4;
+  opacity: 0;
+  transition: opacity 0.7s ease 0.55s;
 }
 body.vault-open #main-site { opacity: 1; }
 
-/* NAV */
+/* ─── NAV ─── */
 nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 22px 48px;
-  background: rgba(8,8,8,0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(201,168,76,0.08);
+  position: sticky; top: 0; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 52px;
+  background: rgba(8,8,8,0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(201,168,76,0.07);
 }
-.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.nav-logo img { height: 30px; width: 30px; object-fit: contain; filter: drop-shadow(0 0 6px rgba(201,168,76,0.5)); }
-.nav-logo span {
+.nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.nav-logo-img { height: 28px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(201,168,76,0.45)); }
+.nav-brand {
   font-family: 'Cormorant Garamond', serif;
-  font-weight: 300;
-  font-size: 20px;
-  letter-spacing: 0.35em;
-  color: #f0ece4;
+  font-weight: 400; font-size: 17px;
+  letter-spacing: 0.42em; color: #f0ece4;
 }
-.nav-links { display: flex; gap: 36px; list-style: none; }
+.nav-links { display: flex; gap: 40px; list-style: none; }
 .nav-links a {
-  font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
-  color: rgba(240,236,228,0.5); text-decoration: none; transition: color 0.3s;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8.5px; font-weight: 300; letter-spacing: 0.32em;
+  text-transform: uppercase; color: rgba(240,236,228,0.45);
+  text-decoration: none; transition: color 0.3s;
 }
 .nav-links a:hover { color: #c9a84c; }
 
-/* HERO-INNER */
+/* ─── HERO ─── */
 .site-hero {
-  min-height: 92vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  min-height: 100vh;
+  position: relative; overflow: hidden;
+}
+.hero-left {
+  grid-column: 1; grid-row: 1 / 3;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  padding: 80px 24px;
-  position: relative;
-  background: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(201,168,76,0.06) 0%, transparent 70%);
+  justify-content: flex-end;
+  padding: clamp(48px, 7vw, 96px);
+  position: relative; z-index: 2;
 }
-.site-hero-eyebrow {
-  font-size: 9px; letter-spacing: 0.5em; text-transform: uppercase;
-  color: rgba(201,168,76,0.6); margin-bottom: 32px; font-family: 'Montserrat', sans-serif; font-weight: 300;
+.hero-eyebrow {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px; font-weight: 300;
+  letter-spacing: 0.55em; text-transform: uppercase;
+  color: rgba(201,168,76,0.6); margin-bottom: 20px;
 }
-.site-hero-title {
+.hero-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(64px, 11vw, 140px);
-  font-weight: 200; letter-spacing: 0.1em;
-  color: #f0ece4; line-height: 0.95; margin-bottom: 10px;
+  font-size: clamp(72px, 11vw, 148px);
+  font-weight: 600; line-height: 0.88;
+  color: #f0ece4; letter-spacing: -0.01em;
 }
-.site-hero-title .apos { color: #c9a84c; font-style: italic; }
-.site-hero-sub {
+.hero-title .apos { color: #c9a84c; }
+.hero-sub {
+  margin-top: 22px;
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(12px, 1.5vw, 16px);
-  letter-spacing: 0.6em; text-transform: uppercase;
-  color: rgba(240,236,228,0.35); margin-bottom: 56px; font-weight: 300; font-style: italic;
+  font-size: clamp(13px, 1.3vw, 17px);
+  font-weight: 300; font-style: italic;
+  letter-spacing: 0.55em; text-transform: uppercase;
+  color: rgba(240,236,228,0.32);
 }
-.hero-btns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
-.btn-gold {
-  background: #c9a84c; color: #080808; padding: 14px 40px;
-  font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 600;
-  letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none;
-  transition: background 0.3s, transform 0.2s; display: inline-block;
-}
-.btn-gold:hover { background: #e2c97e; transform: translateY(-2px); }
-.btn-outline {
-  background: transparent; color: #f0ece4; padding: 14px 40px;
-  font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 400;
-  letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none;
-  border: 1px solid rgba(240,236,228,0.2); transition: border-color 0.3s, color 0.3s; display: inline-block;
-}
-.btn-outline:hover { border-color: #c9a84c; color: #c9a84c; }
+.hero-cta { margin-top: 44px; display: flex; gap: 14px; flex-wrap: wrap; }
 
-/* MARQUEE */
-.marquee-bar {
-  overflow: hidden; border-top: 1px solid rgba(201,168,76,0.15);
-  border-bottom: 1px solid rgba(201,168,76,0.15); padding: 16px 0;
-  background: #0d0d0d;
+/* Hero right — editorial shatter */
+.hero-right {
+  grid-column: 2; grid-row: 1 / 3;
+  position: relative; overflow: hidden;
+}
+.shard {
+  position: absolute;
+  background: #0f0f0f;
+  overflow: hidden;
+}
+/* 4 asymmetric shards */
+.shard-1 { top: 0; right: 0; width: 100%; height: 62%; clip-path: polygon(5% 0, 100% 0, 100% 100%, 0 90%); }
+.shard-2 { top: 62%; left: -2%; width: 55%; height: 38%; clip-path: polygon(7% 10%, 100% 0, 100% 100%, 0 100%); }
+.shard-3 { top: 65%; left: 53%; width: 50%; height: 35%; clip-path: polygon(0 5%, 100% 0, 100% 100%, 0 100%); }
+/* editorial fill — fashion-style gradients */
+.shard-inner {
+  position: absolute; inset: -10%;
+  width: 120%; height: 120%;
+}
+.fill-1 { background: linear-gradient(135deg, #1a0f06 0%, #2d1b0a 35%, #0a0806 100%); }
+.fill-2 { background: linear-gradient(160deg, #0e0e0e 0%, #181210 40%, #240f08 100%); }
+.fill-3 { background: linear-gradient(120deg, #120d08 0%, #1e150a 50%, #0a0a0a 100%); }
+/* overlaid texture marks */
+.shard-mark {
+  position: absolute; pointer-events: none;
+  font-family: 'Cormorant Garamond', serif;
+}
+.mark-1 { bottom: 20%; left: 12%; font-size: clamp(60px, 8vw, 110px); font-weight: 600; font-style: italic; color: rgba(201,168,76,0.06); line-height:1; }
+.mark-2 { top: 15%; right: 8%; font-size: 9px; font-family: 'Montserrat', sans-serif; letter-spacing: 0.5em; text-transform: uppercase; color: rgba(255,255,255,0.04); }
+.mark-3 { bottom: 12%; right: 6%; font-size: clamp(18px, 2.2vw, 26px); font-style: italic; font-weight: 300; color: rgba(201,168,76,0.15); }
+/* thin rule */
+.hero-rule {
+  position: absolute; top: 0; left: -1px; width: 1px; height: 100%;
+  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.15) 30%, rgba(201,168,76,0.15) 70%, transparent);
+}
+
+/* CTA buttons */
+.btn-fill {
+  display: inline-block; padding: 13px 38px;
+  background: #c9a84c; color: #080808;
+  font-family: 'Montserrat', sans-serif; font-size: 8.5px; font-weight: 500;
+  letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+}
+.btn-fill:hover { background: #e0c26c; transform: translateY(-2px); }
+.btn-ghost {
+  display: inline-block; padding: 13px 38px;
+  background: transparent; color: rgba(240,236,228,0.6);
+  font-family: 'Montserrat', sans-serif; font-size: 8.5px; font-weight: 300;
+  letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none;
+  border: 1px solid rgba(240,236,228,0.15);
+  transition: border-color 0.3s, color 0.3s;
+}
+.btn-ghost:hover { border-color: rgba(201,168,76,0.5); color: #c9a84c; }
+
+/* ─── MARQUEE ─── */
+.marquee-wrap {
+  overflow: hidden; padding: 15px 0;
+  border-top: 1px solid rgba(201,168,76,0.1);
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+  background: #060606;
 }
 .marquee-track {
-  display: flex; gap: 56px; animation: mq 22s linear infinite; white-space: nowrap;
+  display: flex; gap: 60px; white-space: nowrap;
+  animation: slide 24s linear infinite;
 }
 .marquee-track span {
-  font-family: 'Montserrat', sans-serif; font-size: 9px;
-  letter-spacing: 0.4em; text-transform: uppercase; color: rgba(201,168,76,0.5); flex-shrink: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8.5px; font-weight: 200; letter-spacing: 0.45em;
+  text-transform: uppercase; color: rgba(201,168,76,0.4); flex-shrink: 0;
 }
-.dot { color: rgba(184,149,106,0.5); }
-@keyframes mq { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-/* MANIFESTO */
-.manifesto {
-  padding: 120px 48px; max-width: 860px; margin: 0 auto; text-align: center;
+/* ─── EDITORIAL GRID ─── */
+.editorial {
+  padding: clamp(60px, 8vh, 110px) clamp(24px, 5vw, 64px);
+  background: #080808;
 }
-.section-label {
-  font-family: 'Montserrat', sans-serif; font-size: 8px;
-  letter-spacing: 0.5em; text-transform: uppercase; color: #c9a84c;
-  margin-bottom: 32px; font-weight: 400;
-}
-.manifesto-text {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(26px, 3.5vw, 44px); font-weight: 300; line-height: 1.45; color: #f0ece4;
-}
-.manifesto-text em { color: #c9a84c; font-style: italic; }
-.manifesto-sub {
-  margin-top: 28px; font-family: 'Montserrat', sans-serif; font-size: 12px;
-  line-height: 1.9; color: rgba(240,236,228,0.4); font-weight: 300; max-width: 520px; margin-inline: auto;
-}
-
-/* COLLECTIONS */
-.collections { padding: 80px 48px 120px; background: #0d0d0d; }
-.collections-header {
+.editorial-head {
   display: flex; justify-content: space-between; align-items: flex-end;
-  margin-bottom: 48px; flex-wrap: wrap; gap: 16px;
+  margin-bottom: 40px; flex-wrap: wrap; gap: 16px;
 }
-.collections-header h2 {
+.editorial-head h2 {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(34px, 4.5vw, 52px); font-weight: 300; color: #f0ece4;
+  font-size: clamp(38px, 5vw, 64px); font-weight: 300; color: #f0ece4;
 }
-.collections-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
-.collection-card { position: relative; aspect-ratio: 2/3; overflow: hidden; }
-.card-bg { width: 100%; height: 100%; transition: transform 0.6s ease; }
-.collection-card:hover .card-bg { transform: scale(1.04); }
-.card-bg-1 { background: linear-gradient(155deg,#1a1208,#2d1f0a,#080808); }
-.card-bg-2 { background: linear-gradient(155deg,#0f0f0f,#1c1410,#2a1a06); }
-.card-bg-3 { background: linear-gradient(155deg,#120e08,#1e1610,#0d0d0d); }
-.card-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(8,8,8,0.95) 0%, rgba(8,8,8,0.15) 50%, transparent 100%);
-  display: flex; flex-direction: column; justify-content: flex-end; padding: 28px;
+.editorial-head h2 em { color: #c9a84c; font-style: italic; }
+.section-eye {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px; font-weight: 300; letter-spacing: 0.5em;
+  text-transform: uppercase; color: rgba(201,168,76,0.5);
+  margin-bottom: 12px;
 }
-.card-tag { font-size: 8px; letter-spacing: 0.3em; text-transform: uppercase; color: #c9a84c; margin-bottom: 8px; font-family: 'Montserrat', sans-serif; }
-.card-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: #f0ece4; margin-bottom: 8px; line-height: 1.1; }
-.card-desc { font-size: 11px; color: rgba(240,236,228,0.45); line-height: 1.6; font-family: 'Montserrat', sans-serif; font-weight: 300; }
-.card-arrow { margin-top: 14px; width: 28px; height: 1px; background: #c9a84c; position: relative; transition: width 0.3s; }
-.collection-card:hover .card-arrow { width: 44px; }
-.card-arrow::after { content: ''; position: absolute; right: 0; top: -3px; width: 7px; height: 7px; border-top: 1px solid #c9a84c; border-right: 1px solid #c9a84c; transform: rotate(45deg); }
 
-/* STORY */
-.story-section {
-  padding: 120px 48px;
-  background: linear-gradient(135deg, #100c06, #080808, #100c06);
-  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+/* Shattered asymmetric grid */
+.shard-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 1.4fr;
+  grid-template-rows: auto auto;
+  gap: 3px;
 }
-.story-content .section-label { text-align: left; }
-.story-content h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(32px, 3.5vw, 48px); font-weight: 300; line-height: 1.25; margin-bottom: 24px; color: #f0ece4; }
-.story-content h2 span { color: #b8956a; }
-.story-content p { font-size: 12px; line-height: 1.9; color: rgba(240,236,228,0.5); font-family: 'Montserrat', sans-serif; font-weight: 300; margin-bottom: 14px; }
-.story-visual {
-  aspect-ratio: 3/4; background: linear-gradient(145deg,#1e1408,#100a04,#0a0806);
-  position: relative; display: flex; align-items: center; justify-content: center;
-  border: 1px solid rgba(201,168,76,0.08);
+.sg-cell {
+  position: relative; overflow: hidden;
+  background: #111;
 }
-.story-visual::before { content: ''; position: absolute; top: -1px; left: 36px; width: 56px; height: 2px; background: #c9a84c; }
-.story-visual-inner { text-align: center; padding: 40px; }
-.story-visual-inner img { width: 100px; opacity: 0.12; display: block; margin: 0 auto 24px; }
-.story-quote { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: #d4b896; line-height: 1.55; opacity: 0.65; }
+.sg-cell-a { grid-column: 1; grid-row: 1 / 3; aspect-ratio: 2/3; }
+.sg-cell-b { grid-column: 2; grid-row: 1; aspect-ratio: 3/4; }
+.sg-cell-c { grid-column: 3; grid-row: 1; aspect-ratio: 4/5; }
+.sg-cell-d { grid-column: 2 / 4; grid-row: 2; aspect-ratio: 16/7; }
 
-/* WAITLIST */
-.waitlist { padding: 120px 48px; text-align: center; background: #080808; position: relative; overflow: hidden; }
-.waitlist::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 500px; height: 500px; background: radial-gradient(circle, rgba(201,168,76,0.05) 0%, transparent 70%); pointer-events: none; }
-.waitlist h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 5.5vw, 64px); font-weight: 300; margin-bottom: 16px; color: #f0ece4; }
-.waitlist h2 span { color: #c9a84c; font-style: italic; }
-.waitlist p { font-size: 12px; color: rgba(240,236,228,0.4); margin-bottom: 44px; font-family: 'Montserrat', sans-serif; font-weight: 300; letter-spacing: 0.05em; }
-.waitlist-form { display: flex; max-width: 460px; margin: 0 auto; }
-.waitlist-form input { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2); border-right: none; padding: 15px 18px; color: #f0ece4; font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.05em; outline: none; transition: border-color 0.3s; }
-.waitlist-form input:focus { border-color: rgba(201,168,76,0.5); }
-.waitlist-form input::placeholder { color: rgba(240,236,228,0.25); }
-.waitlist-form button { background: #c9a84c; color: #080808; border: none; padding: 15px 26px; font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; white-space: nowrap; transition: background 0.3s; }
-.waitlist-form button:hover { background: #e2c97e; }
-.waitlist-note { margin-top: 14px; font-size: 9px; color: rgba(240,236,228,0.2); letter-spacing: 0.1em; font-family: 'Montserrat', sans-serif; }
+/* editorial cell fills */
+.ec-fill { width: 100%; height: 100%; transition: transform 0.6s ease; }
+.sg-cell:hover .ec-fill { transform: scale(1.03); }
+.ec-a { background: linear-gradient(170deg, #1c0f05 0%, #2a1608 30%, #120b04 60%, #080808 100%); }
+.ec-b { background: linear-gradient(140deg, #0e0e0e 0%, #1a1208 50%, #0a0a0a 100%); }
+.ec-c { background: linear-gradient(125deg, #1a1006 0%, #261808 40%, #0e0c08 100%); }
+.ec-d { background: linear-gradient(110deg, #100e0a 0%, #1c160c 35%, #0c0a08 65%, #181008 100%); }
 
-/* FOOTER */
-footer { border-top: 1px solid rgba(201,168,76,0.1); padding: 44px 48px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; background: #0a0a0a; }
-.footer-brand { display: flex; align-items: center; gap: 10px; }
-.footer-brand img { height: 28px; width: 28px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(201,168,76,0.4)); }
-.footer-brand-text { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 18px; letter-spacing: 0.35em; color: #f0ece4; }
-.footer-tagline { font-size: 8px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(240,236,228,0.25); margin-top: 3px; font-family: 'Montserrat', sans-serif; }
-.footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
-.footer-links a { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(240,236,228,0.35); text-decoration: none; font-family: 'Montserrat', sans-serif; transition: color 0.3s; }
+/* overlay text on cells */
+.ec-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 28px;
+  background: linear-gradient(to top, rgba(8,8,8,0.95) 0%, rgba(8,8,8,0.3) 50%, transparent 100%);
+}
+.ec-tag {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 7.5px; font-weight: 300; letter-spacing: 0.35em;
+  text-transform: uppercase; color: #c9a84c; margin-bottom: 6px;
+}
+.ec-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(20px, 2.2vw, 30px); font-weight: 300;
+  color: #f0ece4; line-height: 1.1;
+}
+.ec-arrow {
+  display: inline-block; margin-top: 12px;
+  width: 24px; height: 1px; background: #c9a84c;
+  position: relative; transition: width 0.3s;
+  vertical-align: middle;
+}
+.ec-arrow::after {
+  content: ''; position: absolute; right: -1px; top: -3px;
+  width: 7px; height: 7px;
+  border-top: 1px solid #c9a84c; border-right: 1px solid #c9a84c;
+  transform: rotate(45deg);
+}
+.sg-cell:hover .ec-arrow { width: 38px; }
+
+/* large cell editorial mark */
+.ec-bigmark {
+  position: absolute; top: 10%; left: 8%;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(90px, 13vw, 180px);
+  font-weight: 600; font-style: italic;
+  color: rgba(201,168,76,0.04); line-height: 1;
+  pointer-events: none; user-select: none;
+}
+
+/* ─── MANIFESTO STRIP ─── */
+.manifesto-strip {
+  padding: clamp(80px, 11vh, 140px) clamp(24px, 7vw, 120px);
+  background: #060606;
+  display: grid; grid-template-columns: 1fr 2fr; gap: 80px;
+  align-items: start;
+  border-top: 1px solid rgba(201,168,76,0.07);
+  border-bottom: 1px solid rgba(201,168,76,0.07);
+}
+.manifesto-left { padding-top: 6px; }
+.manifesto-left .section-eye { color: #c9a84c; }
+.manifesto-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(120px, 18vw, 220px); font-weight: 300; font-style: italic;
+  color: rgba(201,168,76,0.06); line-height: 0.85;
+  margin-top: -16px;
+}
+.manifesto-right h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(30px, 4vw, 54px); font-weight: 300; line-height: 1.35;
+  color: #f0ece4; margin-bottom: 28px;
+}
+.manifesto-right h2 em { color: #c9a84c; font-style: italic; }
+.manifesto-right p {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px; font-weight: 300; line-height: 1.95;
+  color: rgba(240,236,228,0.38); max-width: 500px;
+}
+
+/* ─── WAITLIST ─── */
+.waitlist {
+  padding: clamp(80px, 10vh, 120px) clamp(24px, 7vw, 120px);
+  background: #080808;
+  text-align: center; position: relative; overflow: hidden;
+}
+.waitlist::before {
+  content: ''; position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+.waitlist h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(40px, 6vw, 76px); font-weight: 300;
+  color: #f0ece4; margin-bottom: 16px; position: relative;
+}
+.waitlist h2 em { color: #c9a84c; font-style: italic; }
+.waitlist .sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px; font-weight: 300; letter-spacing: 0.05em;
+  color: rgba(240,236,228,0.35); margin-bottom: 44px; position: relative;
+}
+.wl-form { display: flex; max-width: 480px; margin: 0 auto; position: relative; }
+.wl-form input {
+  flex: 1; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(201,168,76,0.18); border-right: none;
+  padding: 15px 20px; color: #f0ece4;
+  font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.05em;
+  outline: none; transition: border-color 0.3s;
+}
+.wl-form input:focus { border-color: rgba(201,168,76,0.45); }
+.wl-form input::placeholder { color: rgba(240,236,228,0.22); }
+.wl-form button {
+  background: #c9a84c; color: #080808; border: none;
+  padding: 15px 28px;
+  font-family: 'Montserrat', sans-serif; font-size: 8.5px; font-weight: 500;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  white-space: nowrap; transition: background 0.3s;
+}
+.wl-form button:hover { background: #e0c26c; }
+.wl-note { margin-top: 14px; font-size: 8.5px; color: rgba(240,236,228,0.18); letter-spacing: 0.1em; font-family: 'Montserrat', sans-serif; position: relative; }
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid rgba(201,168,76,0.08);
+  padding: 40px clamp(24px, 5vw, 64px);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 20px; background: #050505;
+}
+.footer-brand { display: flex; align-items: center; gap: 12px; }
+.footer-brand img { height: 26px; object-fit: contain; filter: drop-shadow(0 0 4px rgba(201,168,76,0.4)); }
+.footer-name { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 16px; letter-spacing: 0.42em; color: #f0ece4; }
+.footer-tag { font-size: 7.5px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(240,236,228,0.22); font-family: 'Montserrat', sans-serif; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(240,236,228,0.3); text-decoration: none; font-family: 'Montserrat', sans-serif; transition: color 0.3s; }
 .footer-links a:hover { color: #c9a84c; }
-.footer-copy { font-size: 9px; color: rgba(240,236,228,0.18); letter-spacing: 0.08em; font-family: 'Montserrat', sans-serif; }
+.footer-copy { font-size: 8.5px; color: rgba(240,236,228,0.14); letter-spacing: 0.08em; font-family: 'Montserrat', sans-serif; }
 
-@media (max-width: 768px) {
-  nav { padding: 18px 24px; }
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .site-hero { grid-template-columns: 1fr; }
+  .hero-right { display: none; }
+  .hero-left { padding: 48px 28px 64px; }
+  .shard-grid { grid-template-columns: 1fr 1fr; }
+  .sg-cell-a { grid-column: 1 / 3; grid-row: 1; aspect-ratio: 3/2; }
+  .sg-cell-d { grid-column: 1 / 3; }
+  .manifesto-strip { grid-template-columns: 1fr; gap: 24px; }
+  .manifesto-num { font-size: 80px; }
+  nav { padding: 16px 24px; }
   .nav-links { display: none; }
-  .collections-grid { grid-template-columns: 1fr; }
-  .story-section { grid-template-columns: 1fr; padding: 80px 24px; }
-  .story-visual { display: none; }
-  .manifesto, .waitlist { padding: 80px 24px; }
-  .collections { padding: 60px 24px 80px; }
-  footer { padding: 32px 24px; flex-direction: column; text-align: center; }
-  .waitlist-form { flex-direction: column; }
-  .waitlist-form input { border-right: 1px solid rgba(201,168,76,0.2); border-bottom: none; }
+  footer { flex-direction: column; text-align: center; }
+  .wl-form { flex-direction: column; }
+  .wl-form input { border-right: 1px solid rgba(201,168,76,0.18); border-bottom: none; }
 }
 </style>
 </head>
 <body>
 
-<!-- CUSTOM CURSOR -->
-<div id="default-cursor"></div>
+<!-- CURSOR -->
+<div id="cursor-dot"></div>
 <div id="gem-cursor"><img src="ohera-icon.svg" alt=""></div>
 
 <!-- VAULT PANELS -->
-<div id="vault-left"></div>
-<div id="vault-right"></div>
+<div id="vault-l"></div>
+<div id="vault-r"></div>
 
-<!-- ── ENTRY SCREEN ── -->
+<!-- ─── ENTRY PORTAL ─── -->
 <div id="entry">
-  <div class="wordmark">
-    <span class="wordmark-part">O</span>
-    <span class="wordmark-apostrophe-wrap">
-      <img id="wordmark-gem" src="ohera-icon.svg" alt="'">
-      <span class="apostrophe-ghost">'</span>
-    </span>
-    <span class="wordmark-part">HERA</span>
+  <div class="wm-container">
+    <!-- Full official PNG wordmark (RGBA, transparent bg) -->
+    <img class="wm-logo-png" src="ohera-wordmark.png" alt="O'HERA — Own Your Era" draggable="false">
+    <!-- Interactive gem layer positioned over the apostrophe in the PNG -->
+    <img id="gem-overlay" src="ohera-icon.svg" alt="" draggable="false">
+    <!-- Ghost mark after gem departs -->
+    <div id="gem-ghost">'</div>
   </div>
-  <p class="tagline">Own Your Era</p>
 </div>
 
 <!-- ACCESS THE ERA button -->
 <button id="access-btn" aria-label="Access the Era">
   <span class="btn-label">Access the Era</span>
-  <span class="btn-line"></span>
+  <div class="btn-rule"></div>
 </button>
 
-<!-- ── MAIN SITE (revealed after vault) ── -->
+<!-- ─── MAIN SITE ─── -->
 <div id="main-site">
   <nav>
     <a href="#" class="nav-logo">
-      <img src="ohera-icon.svg" alt="O'HERA">
-      <span>O'HERA</span>
+      <img src="ohera-icon.svg" alt="O'HERA" class="nav-logo-img">
+      <span class="nav-brand">O'HERA</span>
     </a>
     <ul class="nav-links">
       <li><a href="#collections">Collections</a></li>
-      <li><a href="#story">Story</a></li>
+      <li><a href="#story">Manifesto</a></li>
       <li><a href="#waitlist">Waitlist</a></li>
     </ul>
   </nav>
 
+  <!-- HERO: asymmetric split -->
   <section class="site-hero">
-    <p class="site-hero-eyebrow">New Women's Western Wear — India</p>
-    <h1 class="site-hero-title"><span class="apos">O'</span>HERA</h1>
-    <p class="site-hero-sub">Own Your Era</p>
-    <div class="hero-btns">
-      <a href="#collections" class="btn-gold">Explore Collections</a>
-      <a href="#waitlist" class="btn-outline">Join the Waitlist</a>
+    <div class="hero-left">
+      <p class="hero-eyebrow">Women's Western Wear — India</p>
+      <h1 class="hero-title"><span class="apos">O'</span>HERA</h1>
+      <p class="hero-sub">Own Your Era</p>
+      <div class="hero-cta">
+        <a href="#collections" class="btn-fill">Explore Collections</a>
+        <a href="#waitlist" class="btn-ghost">Join Waitlist</a>
+      </div>
+    </div>
+    <div class="hero-right" aria-hidden="true">
+      <div class="hero-rule"></div>
+      <div class="shard shard-1">
+        <div class="shard-inner fill-1"></div>
+        <div class="shard-mark mark-2">COLLECTION 2026 ✦ OWN YOUR ERA</div>
+        <div class="shard-mark mark-3">New Collection</div>
+      </div>
+      <div class="shard shard-2">
+        <div class="shard-inner fill-2"></div>
+      </div>
+      <div class="shard shard-3">
+        <div class="shard-inner fill-3"></div>
+        <div class="shard-mark mark-1">O</div>
+      </div>
     </div>
   </section>
 
-  <div class="marquee-bar">
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
     <div class="marquee-track">
-      <span>Own Your Era <span class="dot">✦</span></span>
-      <span>Western Wear <span class="dot">✦</span></span>
-      <span>Made for India <span class="dot">✦</span></span>
-      <span>Obsidian Black <span class="dot">✦</span></span>
-      <span>O'HERA <span class="dot">✦</span></span>
-      <span>Unapologetically You <span class="dot">✦</span></span>
-      <span>Own Your Era <span class="dot">✦</span></span>
-      <span>Western Wear <span class="dot">✦</span></span>
-      <span>Made for India <span class="dot">✦</span></span>
-      <span>Obsidian Black <span class="dot">✦</span></span>
-      <span>O'HERA <span class="dot">✦</span></span>
-      <span>Unapologetically You <span class="dot">✦</span></span>
+      <span>Own Your Era</span><span>✦</span>
+      <span>Western Wear</span><span>✦</span>
+      <span>Made for India</span><span>✦</span>
+      <span>Obsidian Black</span><span>✦</span>
+      <span>O'HERA</span><span>✦</span>
+      <span>Unapologetically You</span><span>✦</span>
+      <span>Short Dresses</span><span>✦</span>
+      <span>Earthy Textures</span><span>✦</span>
+      <span>Own Your Era</span><span>✦</span>
+      <span>Western Wear</span><span>✦</span>
+      <span>Made for India</span><span>✦</span>
+      <span>Obsidian Black</span><span>✦</span>
+      <span>O'HERA</span><span>✦</span>
+      <span>Unapologetically You</span><span>✦</span>
+      <span>Short Dresses</span><span>✦</span>
+      <span>Earthy Textures</span><span>✦</span>
     </div>
   </div>
 
-  <section class="manifesto" id="story">
-    <p class="section-label">Our Manifesto</p>
-    <h2 class="manifesto-text">
-      Clothes that don't ask for permission.<br>
-      Silhouettes built for <em>the woman who leads.</em>
-    </h2>
-    <p class="manifesto-sub">O'HERA is western wear designed for the modern Indian woman — bold, fluid, and entirely her own. We blend sharp western cuts with a deep respect for how Indian women actually live, move, and command a room.</p>
-  </section>
+  <!-- EDITORIAL SHATTER GRID -->
+  <section class="editorial" id="collections">
+    <div class="editorial-head">
+      <div>
+        <p class="section-eye">The Collections — 2026</p>
+        <h2>The <em>Era</em><br>Begins.</h2>
+      </div>
+      <a href="#waitlist" class="btn-ghost">Be First to Shop</a>
+    </div>
 
-  <section class="collections" id="collections">
-    <div class="collections-header">
-      <h2>The Collections</h2>
-      <a href="#waitlist" class="btn-outline">Be First to Shop</a>
-    </div>
-    <div class="collections-grid">
-      <div class="collection-card">
-        <div class="card-bg card-bg-1"></div>
-        <div class="card-overlay">
-          <span class="card-tag">Collection 01</span>
-          <h3 class="card-title">Obsidian<br>Noir</h3>
-          <p class="card-desc">Sharp tailoring in matte black. For the woman who walks in and owns the room.</p>
-          <div class="card-arrow"></div>
+    <div class="shard-grid">
+      <!-- Large portrait -->
+      <div class="sg-cell sg-cell-a">
+        <div class="ec-fill ec-a"></div>
+        <div class="ec-bigmark">O</div>
+        <div class="ec-overlay">
+          <p class="ec-tag">Collection 01</p>
+          <h3 class="ec-title">Obsidian<br>Noir</h3>
+          <div class="ec-arrow"></div>
         </div>
       </div>
-      <div class="collection-card">
-        <div class="card-bg card-bg-2"></div>
-        <div class="card-overlay">
-          <span class="card-tag">Collection 02</span>
-          <h3 class="card-title">Golden<br>Hour</h3>
-          <p class="card-desc">Metallic gold accents on fluid silhouettes. Effortless luxury, day to night.</p>
-          <div class="card-arrow"></div>
+      <!-- Top right small -->
+      <div class="sg-cell sg-cell-b">
+        <div class="ec-fill ec-b"></div>
+        <div class="ec-overlay">
+          <p class="ec-tag">Collection 02</p>
+          <h3 class="ec-title">Golden<br>Hour</h3>
+          <div class="ec-arrow"></div>
         </div>
       </div>
-      <div class="collection-card">
-        <div class="card-bg card-bg-3"></div>
-        <div class="card-overlay">
-          <span class="card-tag">Collection 03</span>
-          <h3 class="card-title">Clay &<br>Sand</h3>
-          <p class="card-desc">Earthy tones, raw textures. Rooted in India, styled for the world.</p>
-          <div class="card-arrow"></div>
+      <!-- Top far right -->
+      <div class="sg-cell sg-cell-c">
+        <div class="ec-fill ec-c"></div>
+        <div class="ec-overlay">
+          <p class="ec-tag">Collection 03</p>
+          <h3 class="ec-title">Clay<br>&amp; Sand</h3>
+          <div class="ec-arrow"></div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <section class="story-section">
-    <div class="story-content">
-      <p class="section-label">The O'HERA Story</p>
-      <h2>Where the west<br>meets <span>Indian ground.</span></h2>
-      <p>Every O'HERA piece is built on a contradiction — the sharp, bold lines of western fashion, grounded in the warmth and texture of India. Like a mud house with a glass ceiling.</p>
-      <p>We design for women who don't choose between their roots and their ambition. You can wear both. You can be both.</p>
-      <a href="#waitlist" class="btn-gold" style="margin-top:16px; display:inline-block;">Own Your Era →</a>
-    </div>
-    <div class="story-visual">
-      <div class="story-visual-inner">
-        <img src="ohera-icon.svg" alt="">
-        <p class="story-quote">"She didn't follow the era —<br>she became it."</p>
+      <!-- Wide bottom strip -->
+      <div class="sg-cell sg-cell-d">
+        <div class="ec-fill ec-d"></div>
+        <div class="ec-overlay" style="padding:20px 28px;">
+          <p class="ec-tag">Coming 2026 — Short Dresses &amp; Western Separates ✦ India-First</p>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- MANIFESTO -->
+  <section class="manifesto-strip" id="story">
+    <div class="manifesto-left">
+      <p class="section-eye">Our Manifesto</p>
+      <div class="manifesto-num">01</div>
+    </div>
+    <div class="manifesto-right">
+      <h2>Clothes that don't ask<br>for <em>permission.</em></h2>
+      <p>O'HERA is western wear designed for the modern Indian woman — bold, fluid, and entirely her own. Sharp western cuts, grounded in the warmth and raw texture of India. Like a mud house with a glass ceiling.</p>
+      <p style="margin-top:18px;">We design for women who don't choose between their roots and their ambition. You can wear both. You can be both.</p>
+    </div>
+  </section>
+
+  <!-- WAITLIST -->
   <section class="waitlist" id="waitlist">
-    <p class="section-label">Coming Soon</p>
-    <h2>Be First to<br><span>Own Your Era.</span></h2>
-    <p>Join the waitlist for early access, launch offers, and first look at collections.</p>
-    <form class="waitlist-form" onsubmit="handleSubmit(event)">
-      <input type="email" placeholder="Enter your email address" required>
+    <p class="section-eye" style="position:relative;">Coming Soon</p>
+    <h2>Be First to<br><em>Own Your Era.</em></h2>
+    <p class="sub">Join the waitlist for early access, launch drops, and first look at collections.</p>
+    <form class="wl-form" onsubmit="handleSubmit(event)">
+      <input type="email" placeholder="Your email address" required>
       <button type="submit">Join Now</button>
     </form>
-    <p class="waitlist-note">No spam. Just your era, arriving soon.</p>
+    <p class="wl-note">No spam. Just your era, arriving soon.</p>
   </section>
 
   <footer>
     <div>
       <div class="footer-brand">
         <img src="ohera-icon.svg" alt="O'HERA">
-        <span class="footer-brand-text">O'HERA</span>
+        <span class="footer-name">O'HERA</span>
       </div>
-      <div class="footer-tagline">Own Your Era</div>
+      <div class="footer-tag">Own Your Era</div>
     </div>
     <div class="footer-links">
       <a href="#collections">Collections</a>
-      <a href="#story">Our Story</a>
+      <a href="#story">Manifesto</a>
       <a href="#waitlist">Waitlist</a>
       <a href="mailto:hello@ohera.in">Contact</a>
     </div>
@@ -564,122 +692,132 @@ footer { border-top: 1px solid rgba(201,168,76,0.1); padding: 44px 48px; display
 
 <script>
 (function() {
-  const defaultCursor = document.getElementById('default-cursor');
-  const gemCursor     = document.getElementById('gem-cursor');
-  const wordmarkGem   = document.getElementById('wordmark-gem');
-  const ghost         = document.querySelector('.apostrophe-ghost');
-  const accessBtn     = document.getElementById('access-btn');
-  const entry         = document.getElementById('entry');
+  const dot        = document.getElementById('cursor-dot');
+  const gemCursor  = document.getElementById('gem-cursor');
+  const gemOverlay = document.getElementById('gem-overlay');
+  const gemGhost   = document.getElementById('gem-ghost');
+  const accessBtn  = document.getElementById('access-btn');
+  const entry      = document.getElementById('entry');
 
   let mx = -999, my = -999;
-  let gemFlown = false;
-  let gemFlyAnim = null;
+  let gemLaunched = false;
+  let tracking = false;
 
-  // Track mouse
+  /* ── Mouse tracking ── */
   document.addEventListener('mousemove', e => {
     mx = e.clientX; my = e.clientY;
-    defaultCursor.style.left = mx + 'px';
-    defaultCursor.style.top  = my + 'px';
-    if (gemFlown) {
+    dot.style.left = mx + 'px';
+    dot.style.top  = my + 'px';
+    if (tracking) {
       gemCursor.style.left = mx + 'px';
       gemCursor.style.top  = my + 'px';
-    } else {
-      flyGemToCursor();
     }
+    if (!gemLaunched) launchGem();
   });
 
-  // Show access button after brief delay
-  setTimeout(() => accessBtn.classList.add('visible'), 800);
+  /* Show ACCESS button after page loads */
+  setTimeout(() => accessBtn.classList.add('show'), 700);
 
-  function flyGemToCursor() {
-    if (gemFlown || !wordmarkGem) return;
-    gemFlown = true;
+  /* ── Launch gem from wordmark ── */
+  function launchGem() {
+    if (gemLaunched) return;
+    gemLaunched = true;
 
-    // Get wordmark gem's current screen position
-    const rect = wordmarkGem.getBoundingClientRect();
-    const startX = rect.left + rect.width / 2;
-    const startY = rect.top  + rect.height / 2;
-    const startSize = rect.width;
+    const rect = gemOverlay.getBoundingClientRect();
+    const sx = rect.left + rect.width  / 2;
+    const sy = rect.top  + rect.height / 2;
+    const sw = rect.width;
+    const sh = rect.height;
 
-    // Position gem cursor at starting position, full size
-    gemCursor.style.width  = startSize + 'px';
-    gemCursor.style.height = startSize + 'px';
-    gemCursor.style.left   = startX + 'px';
-    gemCursor.style.top    = startY + 'px';
+    /* Stamp gem cursor at exact wordmark apostrophe position, same size */
     gemCursor.style.transition = 'none';
+    gemCursor.style.width   = sw + 'px';
+    gemCursor.style.height  = sh + 'px';
+    gemCursor.style.left    = sx + 'px';
+    gemCursor.style.top     = sy + 'px';
     gemCursor.style.opacity = '1';
 
-    // Fade out wordmark gem, show ghost apostrophe
-    wordmarkGem.style.opacity = '0';
-    ghost.style.opacity = '1';
-    defaultCursor.style.opacity = '0';
+    /* Fade wordmark gem, reveal ghost */
+    gemOverlay.style.opacity = '0';
+    gemGhost.style.opacity   = '1';
+    dot.style.opacity = '0';
 
-    // Animate: fly to cursor position + shrink to 28px
+    /* Next frame: animate fly + shrink to cursor */
     requestAnimationFrame(() => {
-      gemCursor.style.transition = 'left 0.65s cubic-bezier(0.34,1.26,0.64,1), top 0.65s cubic-bezier(0.34,1.26,0.64,1), width 0.65s ease, height 0.65s ease';
-      gemCursor.style.left   = mx + 'px';
-      gemCursor.style.top    = my + 'px';
-      gemCursor.style.width  = '28px';
-      gemCursor.style.height = '28px';
+      requestAnimationFrame(() => {
+        gemCursor.style.transition =
+          'left 0.7s cubic-bezier(0.34,1.2,0.64,1), ' +
+          'top 0.7s cubic-bezier(0.34,1.2,0.64,1), ' +
+          'width 0.7s cubic-bezier(0.25,1,0.5,1), ' +
+          'height 0.7s cubic-bezier(0.25,1,0.5,1)';
+        gemCursor.style.left   = mx + 'px';
+        gemCursor.style.top    = my + 'px';
+        gemCursor.style.width  = '32px';
+        gemCursor.style.height = '32px';
+      });
     });
 
-    // After animation: lock to mouse frame-perfect
+    /* Lock to rAF tracking after animation */
     setTimeout(() => {
       gemCursor.style.transition = 'none';
-      trackGemCursor();
-    }, 680);
+      tracking = true;
+      loop();
+    }, 720);
   }
 
-  function trackGemCursor() {
+  function loop() {
+    if (!tracking) return;
     gemCursor.style.left = mx + 'px';
     gemCursor.style.top  = my + 'px';
-    requestAnimationFrame(trackGemCursor);
+    requestAnimationFrame(loop);
   }
 
-  // ACCESS THE ERA — vault open
+  /* ── Vault open ── */
   accessBtn.addEventListener('click', openVault);
 
   function openVault() {
-    accessBtn.style.display = 'none';
+    accessBtn.classList.remove('show');
+    accessBtn.classList.add('hide');
 
-    // Brief crack: show seam
-    document.body.classList.add('vault-cracking');
+    /* Flash seam */
+    document.body.classList.add('cracking');
 
     setTimeout(() => {
       document.body.classList.add('vault-open');
 
-      // Fade out entry
+      /* Fade entry */
       setTimeout(() => {
-        entry.style.transition = 'opacity 0.4s';
+        entry.style.transition = 'opacity 0.5s ease';
         entry.style.opacity = '0';
-      }, 200);
+      }, 300);
 
-      // Remove vault panels after animation
+      /* Cleanup after animation */
       setTimeout(() => {
-        document.getElementById('vault-left').style.display = 'none';
-        document.getElementById('vault-right').style.display = 'none';
-        entry.style.display = 'none';
+        document.getElementById('vault-l').remove();
+        document.getElementById('vault-r').remove();
+        entry.remove();
         document.body.style.overflow = '';
-      }, 1400);
+        /* Allow main site cursor interaction */
+        dot.style.opacity = '0';
+      }, 1500);
 
-    }, 120);
+    }, 100);
   }
 
-  // Waitlist
+  /* ── Waitlist ── */
   window.handleSubmit = function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button');
+    const orig = btn.textContent;
     btn.textContent = 'You\'re In ✦';
     btn.style.background = 'transparent';
     btn.style.color = '#c9a84c';
     btn.style.border = '1px solid #c9a84c';
     e.target.querySelector('input').value = '';
     setTimeout(() => {
-      btn.textContent = 'Join Now';
-      btn.style.background = '';
-      btn.style.color = '';
-      btn.style.border = '';
-    }, 3000);
+      btn.textContent = orig;
+      btn.style.cssText = '';
+    }, 3500);
   };
 })();
 </script>
