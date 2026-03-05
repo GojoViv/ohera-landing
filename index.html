@@ -103,6 +103,7 @@
       height: 21.9%;
       pointer-events: none;
       transition: opacity 0.15s ease;
+      will-change: transform;
     }
 
     #apos-overlay img {
@@ -475,11 +476,39 @@
       }
     });
 
+    // ── APOSTROPHE PARALLAX (Portal) ──────────────────────────
+    // The gem inside the wordmark subtly tracks the mouse with
+    // a smooth lerp — feels alive, like a magnet pulling toward cursor.
+    const PARALLAX_RANGE = 14; // max px drift in any direction
+    const LERP_FACTOR    = 0.07;
+
+    let lerpX = 0, lerpY = 0; // current interpolated offset
+    let rafId = null;
+
+    function tickParallax() {
+      if (S.detached) return; // stop once gem flies away
+
+      const normX = (S.mx - window.innerWidth  / 2) / (window.innerWidth  / 2);
+      const normY = (S.my - window.innerHeight / 2) / (window.innerHeight / 2);
+
+      const targetX = normX * PARALLAX_RANGE;
+      const targetY = normY * PARALLAX_RANGE;
+
+      lerpX += (targetX - lerpX) * LERP_FACTOR;
+      lerpY += (targetY - lerpY) * LERP_FACTOR;
+
+      aposOverlay.style.transform = `translate(${lerpX.toFixed(2)}px, ${lerpY.toFixed(2)}px)`;
+
+      rafId = requestAnimationFrame(tickParallax);
+    }
+
     // ── ASSET GATE ────────────────────────────────────────────
     function onReady() {
       S.ready = true;
       wImg.classList.add('ready');
       setTimeout(() => btn.classList.add('visible'), 380);
+      // Start apostrophe parallax once wordmark is visible
+      tickParallax();
     }
 
     wImg.onload = onReady;
@@ -510,7 +539,11 @@
         opacity:    '1',
       });
 
-      // 2. Hide original
+      // 2. Stop parallax (rect was already captured above, including offset)
+      cancelAnimationFrame(rafId);
+      aposOverlay.style.transform = 'none'; // reset so overlay hides cleanly
+
+      // Hide original
       aposOverlay.style.opacity = '0';
 
       // Trigger reflow so browser sees the starting position
