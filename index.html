@@ -4,720 +4,684 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>O'HERA — Own Your Era</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;1,200;1,300&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --black: #0a0a0a;
-    --black-soft: #111111;
-    --white: #f5f5f0;
-    --gold: #c9a84c;
-    --gold-light: #e2c97e;
-    --clay: #b8956a;
-    --sand: #d4b896;
-    --sand-light: #e8d5c0;
-  }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #080808; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* ── CURSOR ── */
+* { cursor: none !important; }
+#gem-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  will-change: transform;
+}
+#gem-cursor img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(201,168,76,0.8));
+}
+#default-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(201,168,76,0.7);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s;
+}
 
-  html { scroll-behavior: smooth; }
+/* ── ENTRY SCREEN ── */
+#entry {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #080808;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#entry::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
 
-  body {
-    background: var(--black);
-    color: var(--white);
-    font-family: 'Montserrat', sans-serif;
-    overflow-x: hidden;
-  }
+/* Wordmark */
+.wordmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+}
+.wordmark-part {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 200;
+  font-size: clamp(80px, 14vw, 180px);
+  letter-spacing: 0.05em;
+  color: #f0ece4;
+  line-height: 1;
+}
+.wordmark-apostrophe-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* sized to match the apostrophe visual weight */
+  width: clamp(36px, 5.5vw, 72px);
+  height: clamp(36px, 5.5vw, 72px);
+  margin: 0 clamp(2px, 0.4vw, 6px);
+  vertical-align: middle;
+  margin-bottom: clamp(20px, 3.5vw, 50px);
+}
+#wordmark-gem {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(201,168,76,0.6));
+  transition: opacity 0.5s ease;
+}
+/* ghost apostrophe shown after gem flies away */
+.apostrophe-ghost {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 200;
+  font-size: clamp(80px, 14vw, 180px);
+  color: rgba(201,168,76,0.15);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  line-height: 1;
+  pointer-events: none;
+}
 
-  /* ── NAV ── */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 24px 48px;
-    background: linear-gradient(to bottom, rgba(10,10,10,0.95), transparent);
-  }
-  .nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-  }
-  .nav-logo img {
-    height: 38px;
-    width: 38px;
-    object-fit: contain;
-    filter: brightness(0) invert(1);
-  }
-  .nav-logo-text {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: 6px;
-    color: var(--white);
-  }
-  .nav-links { display: flex; gap: 36px; list-style: none; }
-  .nav-links a {
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: rgba(245,245,240,0.7);
-    text-decoration: none;
-    transition: color 0.3s;
-  }
-  .nav-links a:hover { color: var(--gold); }
+.tagline {
+  margin-top: clamp(24px, 4vw, 44px);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+  font-size: clamp(9px, 1.1vw, 13px);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(240,236,228,0.35);
+}
 
-  /* ── HERO ── */
-  .hero {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    position: relative;
-    padding: 120px 24px 80px;
-    background:
-      radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse at 100% 100%, rgba(184,149,106,0.06) 0%, transparent 50%),
-      var(--black);
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    opacity: 0.4;
-    pointer-events: none;
-  }
+/* ACCESS button — bottom right */
+#access-btn {
+  position: fixed;
+  bottom: clamp(28px, 5vh, 56px);
+  right: clamp(28px, 5vw, 64px);
+  z-index: 200;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 1s ease 0.6s;
+}
+#access-btn .btn-label {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+  font-size: clamp(8px, 0.9vw, 11px);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.7);
+  transition: color 0.3s;
+}
+#access-btn .btn-line {
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(to left, rgba(201,168,76,0.7), transparent);
+  transition: width 0.4s ease;
+}
+#access-btn:hover .btn-label { color: rgba(201,168,76,1); }
+#access-btn:hover .btn-line { width: 64px; }
+#access-btn.visible { opacity: 1; }
 
-  .hero-eyebrow {
-    font-size: 10px;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 28px;
-    font-weight: 500;
-  }
+/* ── VAULT TRANSITION ── */
+#vault-left, #vault-right {
+  position: fixed;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  z-index: 300;
+  background: #080808;
+  transform: translateX(0);
+  transition: transform 1.1s cubic-bezier(0.76, 0, 0.24, 1);
+  pointer-events: none;
+}
+#vault-left { left: 0; }
+#vault-right { right: 0; }
+/* gold seam */
+#vault-left::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 1px; height: 100%;
+  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.8) 30%, rgba(201,168,76,0.8) 70%, transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#vault-right::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 1px; height: 100%;
+  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.8) 30%, rgba(201,168,76,0.8) 70%, transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+body.vault-cracking #vault-left::after,
+body.vault-cracking #vault-right::before { opacity: 1; }
+body.vault-open #vault-left  { transform: translateX(-100%); }
+body.vault-open #vault-right { transform: translateX(100%); }
 
-  .hero-logo-img {
-    width: clamp(160px, 28vw, 320px);
-    height: clamp(160px, 28vw, 320px);
-    object-fit: contain;
-    margin-bottom: 24px;
-    filter: drop-shadow(0 0 40px rgba(201,168,76,0.35));
-    animation: logoPulse 4s ease-in-out infinite;
-  }
-  @keyframes logoPulse {
-    0%,100% { filter: drop-shadow(0 0 30px rgba(201,168,76,0.3)); }
-    50%      { filter: drop-shadow(0 0 60px rgba(201,168,76,0.6)); }
-  }
-  .hero-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(52px, 10vw, 120px);
-    font-weight: 300;
-    line-height: 0.9;
-    letter-spacing: 12px;
-    color: var(--white);
-    margin-bottom: 12px;
-    position: relative;
-  }
-  .hero-title .apostrophe {
-    color: var(--gold);
-    font-style: italic;
-    text-shadow: 0 0 40px rgba(201,168,76,0.5);
-  }
+/* ── MAIN SITE ── */
+#main-site {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.5s;
+  background: #080808;
+  color: #f0ece4;
+}
+body.vault-open #main-site { opacity: 1; }
 
-  .hero-subtitle {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(13px, 2.5vw, 18px);
-    letter-spacing: 10px;
-    text-transform: uppercase;
-    color: rgba(245,245,240,0.5);
-    margin-bottom: 60px;
-    font-weight: 300;
-    font-style: italic;
-  }
+/* NAV */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 48px;
+  background: rgba(8,8,8,0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(201,168,76,0.08);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo img { height: 30px; width: 30px; object-fit: contain; filter: drop-shadow(0 0 6px rgba(201,168,76,0.5)); }
+.nav-logo span {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: 20px;
+  letter-spacing: 0.35em;
+  color: #f0ece4;
+}
+.nav-links { display: flex; gap: 36px; list-style: none; }
+.nav-links a {
+  font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: rgba(240,236,228,0.5); text-decoration: none; transition: color 0.3s;
+}
+.nav-links a:hover { color: #c9a84c; }
 
-  .hero-cta-group { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; }
+/* HERO-INNER */
+.site-hero {
+  min-height: 92vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 80px 24px;
+  position: relative;
+  background: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(201,168,76,0.06) 0%, transparent 70%);
+}
+.site-hero-eyebrow {
+  font-size: 9px; letter-spacing: 0.5em; text-transform: uppercase;
+  color: rgba(201,168,76,0.6); margin-bottom: 32px; font-family: 'Montserrat', sans-serif; font-weight: 300;
+}
+.site-hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(64px, 11vw, 140px);
+  font-weight: 200; letter-spacing: 0.1em;
+  color: #f0ece4; line-height: 0.95; margin-bottom: 10px;
+}
+.site-hero-title .apos { color: #c9a84c; font-style: italic; }
+.site-hero-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(12px, 1.5vw, 16px);
+  letter-spacing: 0.6em; text-transform: uppercase;
+  color: rgba(240,236,228,0.35); margin-bottom: 56px; font-weight: 300; font-style: italic;
+}
+.hero-btns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.btn-gold {
+  background: #c9a84c; color: #080808; padding: 14px 40px;
+  font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none;
+  transition: background 0.3s, transform 0.2s; display: inline-block;
+}
+.btn-gold:hover { background: #e2c97e; transform: translateY(-2px); }
+.btn-outline {
+  background: transparent; color: #f0ece4; padding: 14px 40px;
+  font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: 0.3em; text-transform: uppercase; text-decoration: none;
+  border: 1px solid rgba(240,236,228,0.2); transition: border-color 0.3s, color 0.3s; display: inline-block;
+}
+.btn-outline:hover { border-color: #c9a84c; color: #c9a84c; }
 
-  .btn-primary {
-    background: var(--gold);
-    color: var(--black);
-    padding: 14px 40px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: inline-block;
-  }
-  .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); }
+/* MARQUEE */
+.marquee-bar {
+  overflow: hidden; border-top: 1px solid rgba(201,168,76,0.15);
+  border-bottom: 1px solid rgba(201,168,76,0.15); padding: 16px 0;
+  background: #0d0d0d;
+}
+.marquee-track {
+  display: flex; gap: 56px; animation: mq 22s linear infinite; white-space: nowrap;
+}
+.marquee-track span {
+  font-family: 'Montserrat', sans-serif; font-size: 9px;
+  letter-spacing: 0.4em; text-transform: uppercase; color: rgba(201,168,76,0.5); flex-shrink: 0;
+}
+.dot { color: rgba(184,149,106,0.5); }
+@keyframes mq { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-  .btn-outline {
-    background: transparent;
-    color: var(--white);
-    padding: 14px 40px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    text-decoration: none;
-    border: 1px solid rgba(245,245,240,0.3);
-    cursor: pointer;
-    transition: all 0.3s;
-    display: inline-block;
-  }
-  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+/* MANIFESTO */
+.manifesto {
+  padding: 120px 48px; max-width: 860px; margin: 0 auto; text-align: center;
+}
+.section-label {
+  font-family: 'Montserrat', sans-serif; font-size: 8px;
+  letter-spacing: 0.5em; text-transform: uppercase; color: #c9a84c;
+  margin-bottom: 32px; font-weight: 400;
+}
+.manifesto-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(26px, 3.5vw, 44px); font-weight: 300; line-height: 1.45; color: #f0ece4;
+}
+.manifesto-text em { color: #c9a84c; font-style: italic; }
+.manifesto-sub {
+  margin-top: 28px; font-family: 'Montserrat', sans-serif; font-size: 12px;
+  line-height: 1.9; color: rgba(240,236,228,0.4); font-weight: 300; max-width: 520px; margin-inline: auto;
+}
 
-  .scroll-indicator {
-    position: absolute;
-    bottom: 36px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: rgba(245,245,240,0.3);
-    font-size: 9px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
-  .scroll-line {
-    width: 1px;
-    height: 50px;
-    background: linear-gradient(to bottom, var(--gold), transparent);
-    animation: scrollPulse 2s ease-in-out infinite;
-  }
-  @keyframes scrollPulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+/* COLLECTIONS */
+.collections { padding: 80px 48px 120px; background: #0d0d0d; }
+.collections-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 48px; flex-wrap: wrap; gap: 16px;
+}
+.collections-header h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(34px, 4.5vw, 52px); font-weight: 300; color: #f0ece4;
+}
+.collections-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+.collection-card { position: relative; aspect-ratio: 2/3; overflow: hidden; }
+.card-bg { width: 100%; height: 100%; transition: transform 0.6s ease; }
+.collection-card:hover .card-bg { transform: scale(1.04); }
+.card-bg-1 { background: linear-gradient(155deg,#1a1208,#2d1f0a,#080808); }
+.card-bg-2 { background: linear-gradient(155deg,#0f0f0f,#1c1410,#2a1a06); }
+.card-bg-3 { background: linear-gradient(155deg,#120e08,#1e1610,#0d0d0d); }
+.card-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8,8,8,0.95) 0%, rgba(8,8,8,0.15) 50%, transparent 100%);
+  display: flex; flex-direction: column; justify-content: flex-end; padding: 28px;
+}
+.card-tag { font-size: 8px; letter-spacing: 0.3em; text-transform: uppercase; color: #c9a84c; margin-bottom: 8px; font-family: 'Montserrat', sans-serif; }
+.card-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: #f0ece4; margin-bottom: 8px; line-height: 1.1; }
+.card-desc { font-size: 11px; color: rgba(240,236,228,0.45); line-height: 1.6; font-family: 'Montserrat', sans-serif; font-weight: 300; }
+.card-arrow { margin-top: 14px; width: 28px; height: 1px; background: #c9a84c; position: relative; transition: width 0.3s; }
+.collection-card:hover .card-arrow { width: 44px; }
+.card-arrow::after { content: ''; position: absolute; right: 0; top: -3px; width: 7px; height: 7px; border-top: 1px solid #c9a84c; border-right: 1px solid #c9a84c; transform: rotate(45deg); }
 
-  /* ── MARQUEE ── */
-  .marquee-section {
-    overflow: hidden;
-    border-top: 1px solid rgba(201,168,76,0.2);
-    border-bottom: 1px solid rgba(201,168,76,0.2);
-    padding: 18px 0;
-    background: var(--black-soft);
-  }
-  .marquee-track {
-    display: flex;
-    gap: 60px;
-    animation: marquee 20s linear infinite;
-    white-space: nowrap;
-  }
-  .marquee-item {
-    font-size: 10px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: var(--gold);
-    font-weight: 500;
-    flex-shrink: 0;
-  }
-  .marquee-dot { color: var(--clay); }
-  @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+/* STORY */
+.story-section {
+  padding: 120px 48px;
+  background: linear-gradient(135deg, #100c06, #080808, #100c06);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+}
+.story-content .section-label { text-align: left; }
+.story-content h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(32px, 3.5vw, 48px); font-weight: 300; line-height: 1.25; margin-bottom: 24px; color: #f0ece4; }
+.story-content h2 span { color: #b8956a; }
+.story-content p { font-size: 12px; line-height: 1.9; color: rgba(240,236,228,0.5); font-family: 'Montserrat', sans-serif; font-weight: 300; margin-bottom: 14px; }
+.story-visual {
+  aspect-ratio: 3/4; background: linear-gradient(145deg,#1e1408,#100a04,#0a0806);
+  position: relative; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(201,168,76,0.08);
+}
+.story-visual::before { content: ''; position: absolute; top: -1px; left: 36px; width: 56px; height: 2px; background: #c9a84c; }
+.story-visual-inner { text-align: center; padding: 40px; }
+.story-visual-inner img { width: 100px; opacity: 0.12; display: block; margin: 0 auto 24px; }
+.story-quote { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: #d4b896; line-height: 1.55; opacity: 0.65; }
 
-  /* ── MANIFESTO ── */
-  .manifesto {
-    padding: 120px 48px;
-    max-width: 900px;
-    margin: 0 auto;
-    text-align: center;
-  }
-  .section-label {
-    font-size: 9px;
-    letter-spacing: 5px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 32px;
-    font-weight: 500;
-  }
-  .manifesto-text {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(28px, 4vw, 48px);
-    font-weight: 300;
-    line-height: 1.4;
-    color: var(--white);
-  }
-  .manifesto-text em { color: var(--gold); font-style: italic; }
-  .manifesto-sub {
-    margin-top: 32px;
-    font-size: 13px;
-    line-height: 1.8;
-    color: rgba(245,245,240,0.5);
-    font-weight: 300;
-    max-width: 560px;
-    margin-left: auto;
-    margin-right: auto;
-  }
+/* WAITLIST */
+.waitlist { padding: 120px 48px; text-align: center; background: #080808; position: relative; overflow: hidden; }
+.waitlist::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 500px; height: 500px; background: radial-gradient(circle, rgba(201,168,76,0.05) 0%, transparent 70%); pointer-events: none; }
+.waitlist h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 5.5vw, 64px); font-weight: 300; margin-bottom: 16px; color: #f0ece4; }
+.waitlist h2 span { color: #c9a84c; font-style: italic; }
+.waitlist p { font-size: 12px; color: rgba(240,236,228,0.4); margin-bottom: 44px; font-family: 'Montserrat', sans-serif; font-weight: 300; letter-spacing: 0.05em; }
+.waitlist-form { display: flex; max-width: 460px; margin: 0 auto; }
+.waitlist-form input { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2); border-right: none; padding: 15px 18px; color: #f0ece4; font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.05em; outline: none; transition: border-color 0.3s; }
+.waitlist-form input:focus { border-color: rgba(201,168,76,0.5); }
+.waitlist-form input::placeholder { color: rgba(240,236,228,0.25); }
+.waitlist-form button { background: #c9a84c; color: #080808; border: none; padding: 15px 26px; font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; white-space: nowrap; transition: background 0.3s; }
+.waitlist-form button:hover { background: #e2c97e; }
+.waitlist-note { margin-top: 14px; font-size: 9px; color: rgba(240,236,228,0.2); letter-spacing: 0.1em; font-family: 'Montserrat', sans-serif; }
 
-  /* ── COLLECTIONS ── */
-  .collections {
-    padding: 80px 48px 120px;
-    background: var(--black-soft);
-  }
-  .collections-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 48px;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-  .collections-header h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(36px, 5vw, 56px);
-    font-weight: 300;
-    color: var(--white);
-  }
-  .collections-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-  }
-  .collection-card {
-    position: relative;
-    aspect-ratio: 2/3;
-    overflow: hidden;
-    cursor: pointer;
-  }
-  .card-bg {
-    width: 100%;
-    height: 100%;
-    transition: transform 0.6s ease;
-  }
-  .collection-card:hover .card-bg { transform: scale(1.04); }
-  .card-bg-1 { background: linear-gradient(160deg, #1a1208 0%, #2d1f0a 40%, #0a0a0a 100%); }
-  .card-bg-2 { background: linear-gradient(160deg, #0f0f0f 0%, #1c1410 50%, #2a1a06 100%); }
-  .card-bg-3 { background: linear-gradient(160deg, #120e08 0%, #1e1610 40%, #0d0d0d 100%); }
+/* FOOTER */
+footer { border-top: 1px solid rgba(201,168,76,0.1); padding: 44px 48px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; background: #0a0a0a; }
+.footer-brand { display: flex; align-items: center; gap: 10px; }
+.footer-brand img { height: 28px; width: 28px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(201,168,76,0.4)); }
+.footer-brand-text { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 18px; letter-spacing: 0.35em; color: #f0ece4; }
+.footer-tagline { font-size: 8px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(240,236,228,0.25); margin-top: 3px; font-family: 'Montserrat', sans-serif; }
+.footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+.footer-links a { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(240,236,228,0.35); text-decoration: none; font-family: 'Montserrat', sans-serif; transition: color 0.3s; }
+.footer-links a:hover { color: #c9a84c; }
+.footer-copy { font-size: 9px; color: rgba(240,236,228,0.18); letter-spacing: 0.08em; font-family: 'Montserrat', sans-serif; }
 
-  .card-texture {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .card-icon {
-    font-size: 80px;
-    opacity: 0.12;
-    filter: sepia(1);
-  }
-  .card-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.2) 50%, transparent 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 28px;
-  }
-  .card-tag {
-    font-size: 9px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 8px;
-    font-weight: 500;
-  }
-  .card-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    font-weight: 400;
-    color: var(--white);
-    margin-bottom: 8px;
-    line-height: 1.1;
-  }
-  .card-desc {
-    font-size: 11px;
-    color: rgba(245,245,240,0.5);
-    line-height: 1.6;
-    font-weight: 300;
-  }
-  .card-arrow {
-    margin-top: 16px;
-    width: 32px;
-    height: 1px;
-    background: var(--gold);
-    position: relative;
-    transition: width 0.3s;
-  }
-  .collection-card:hover .card-arrow { width: 48px; }
-  .card-arrow::after {
-    content: '';
-    position: absolute;
-    right: 0; top: -3px;
-    width: 7px; height: 7px;
-    border-top: 1px solid var(--gold);
-    border-right: 1px solid var(--gold);
-    transform: rotate(45deg);
-  }
-
-  /* ── CLAY SECTION ── */
-  .clay-section {
-    padding: 120px 48px;
-    background: linear-gradient(135deg, #1a120a 0%, #0d0d0d 50%, #1a1006 100%);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: center;
-  }
-  .clay-content .section-label { text-align: left; }
-  .clay-content h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(36px, 4vw, 52px);
-    font-weight: 300;
-    line-height: 1.2;
-    margin-bottom: 24px;
-  }
-  .clay-content h2 span { color: var(--clay); }
-  .clay-content p {
-    font-size: 13px;
-    line-height: 1.9;
-    color: rgba(245,245,240,0.55);
-    font-weight: 300;
-    margin-bottom: 16px;
-  }
-  .clay-visual {
-    aspect-ratio: 3/4;
-    background: linear-gradient(145deg, #2a1a08, #1a1008, #0d0907);
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(201,168,76,0.1);
-  }
-  .clay-visual-inner {
-    text-align: center;
-    padding: 40px;
-  }
-  .clay-visual-inner .big-icon { font-size: 100px; opacity: 0.15; display: block; margin-bottom: 24px; }
-  .clay-visual-quote {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-style: italic;
-    color: var(--sand);
-    line-height: 1.5;
-    opacity: 0.7;
-  }
-  .clay-visual::before {
-    content: '';
-    position: absolute;
-    top: -1px; left: 40px;
-    width: 60px; height: 3px;
-    background: var(--gold);
-  }
-
-  /* ── WAITLIST ── */
-  .waitlist {
-    padding: 120px 48px;
-    text-align: center;
-    background: var(--black);
-    position: relative;
-    overflow: hidden;
-  }
-  .waitlist::before {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .waitlist h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(40px, 6vw, 72px);
-    font-weight: 300;
-    margin-bottom: 16px;
-  }
-  .waitlist h2 span { color: var(--gold); font-style: italic; }
-  .waitlist p {
-    font-size: 13px;
-    color: rgba(245,245,240,0.45);
-    margin-bottom: 48px;
-    letter-spacing: 0.5px;
-    font-weight: 300;
-  }
-  .waitlist-form {
-    display: flex;
-    gap: 0;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-  .waitlist-form input {
-    flex: 1;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(201,168,76,0.25);
-    border-right: none;
-    padding: 16px 20px;
-    color: var(--white);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 12px;
-    letter-spacing: 1px;
-    outline: none;
-    transition: border-color 0.3s;
-  }
-  .waitlist-form input::placeholder { color: rgba(245,245,240,0.3); }
-  .waitlist-form input:focus { border-color: var(--gold); }
-  .waitlist-form button {
-    background: var(--gold);
-    color: var(--black);
-    border: none;
-    padding: 16px 28px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background 0.3s;
-    white-space: nowrap;
-  }
-  .waitlist-form button:hover { background: var(--gold-light); }
-  .waitlist-note {
-    margin-top: 16px;
-    font-size: 10px;
-    color: rgba(245,245,240,0.25);
-    letter-spacing: 1px;
-  }
-
-  /* ── FOOTER ── */
-  footer {
-    border-top: 1px solid rgba(201,168,76,0.15);
-    padding: 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 24px;
-    background: var(--black-soft);
-  }
-  .footer-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .footer-logo img {
-    height: 32px;
-    width: 32px;
-    object-fit: contain;
-    filter: brightness(0) invert(1);
-    opacity: 0.7;
-  }
-  .footer-logo-text {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: 6px;
-    color: var(--white);
-  }
-  .footer-tagline {
-    font-size: 9px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: rgba(245,245,240,0.3);
-    margin-top: 4px;
-  }
-  .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
-  .footer-links a {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: rgba(245,245,240,0.4);
-    text-decoration: none;
-    transition: color 0.3s;
-  }
-  .footer-links a:hover { color: var(--gold); }
-  .footer-copy {
-    font-size: 10px;
-    color: rgba(245,245,240,0.2);
-    letter-spacing: 1px;
-  }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 768px) {
-    nav { padding: 20px 24px; }
-    .nav-links { display: none; }
-    .collections-grid { grid-template-columns: 1fr; gap: 2px; }
-    .clay-section { grid-template-columns: 1fr; gap: 48px; padding: 80px 24px; }
-    .clay-visual { display: none; }
-    .manifesto, .waitlist { padding: 80px 24px; }
-    .collections { padding: 60px 24px 80px; }
-    footer { padding: 36px 24px; flex-direction: column; text-align: center; }
-    .waitlist-form { flex-direction: column; }
-    .waitlist-form input { border-right: 1px solid rgba(201,168,76,0.25); border-bottom: none; }
-  }
+@media (max-width: 768px) {
+  nav { padding: 18px 24px; }
+  .nav-links { display: none; }
+  .collections-grid { grid-template-columns: 1fr; }
+  .story-section { grid-template-columns: 1fr; padding: 80px 24px; }
+  .story-visual { display: none; }
+  .manifesto, .waitlist { padding: 80px 24px; }
+  .collections { padding: 60px 24px 80px; }
+  footer { padding: 32px 24px; flex-direction: column; text-align: center; }
+  .waitlist-form { flex-direction: column; }
+  .waitlist-form input { border-right: 1px solid rgba(201,168,76,0.2); border-bottom: none; }
+}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
-  <a href="#" class="nav-logo">
-    <img src="ohera-icon.svg" alt="O'HERA Icon">
-    <span class="nav-logo-text">O'HERA</span>
-  </a>
-  <ul class="nav-links">
-    <li><a href="#collections">Collections</a></li>
-    <li><a href="#story">Story</a></li>
-    <li><a href="#waitlist">Waitlist</a></li>
-  </ul>
-</nav>
+<!-- CUSTOM CURSOR -->
+<div id="default-cursor"></div>
+<div id="gem-cursor"><img src="ohera-icon.svg" alt=""></div>
 
-<!-- HERO -->
-<section class="hero">
-  <p class="hero-eyebrow">New Women's Western Wear — India</p>
-  <img src="ohera-icon.svg" alt="O'HERA" class="hero-logo-img">
-  <h1 class="hero-title"><span class="apostrophe">O'</span>HERA</h1>
-  <p class="hero-subtitle">Own Your Era</p>
-  <div class="hero-cta-group">
-    <a href="#waitlist" class="btn-primary">Join the Waitlist</a>
-    <a href="#collections" class="btn-outline">Explore Collections</a>
-  </div>
-  <div class="scroll-indicator">
-    <div class="scroll-line"></div>
-    <span>Scroll</span>
-  </div>
-</section>
+<!-- VAULT PANELS -->
+<div id="vault-left"></div>
+<div id="vault-right"></div>
 
-<!-- MARQUEE -->
-<div class="marquee-section">
-  <div class="marquee-track">
-    <span class="marquee-item">Own Your Era <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Western Wear <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Made for India <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Obsidian Black <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">O'HERA <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Unapologetically You <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Own Your Era <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Western Wear <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Made for India <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Obsidian Black <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">O'HERA <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Unapologetically You <span class="marquee-dot">✦</span></span>
+<!-- ── ENTRY SCREEN ── -->
+<div id="entry">
+  <div class="wordmark">
+    <span class="wordmark-part">O</span>
+    <span class="wordmark-apostrophe-wrap">
+      <img id="wordmark-gem" src="ohera-icon.svg" alt="'">
+      <span class="apostrophe-ghost">'</span>
+    </span>
+    <span class="wordmark-part">HERA</span>
   </div>
+  <p class="tagline">Own Your Era</p>
 </div>
 
-<!-- MANIFESTO -->
-<section class="manifesto" id="story">
-  <p class="section-label">Our Manifesto</p>
-  <h2 class="manifesto-text">
-    Clothes that don't ask for permission.<br>
-    Silhouettes built for <em>the woman who leads.</em>
-  </h2>
-  <p class="manifesto-sub">
-    O'HERA is western wear designed for the modern Indian woman — bold, fluid, and entirely her own. We blend sharp western cuts with a deep respect for how Indian women actually live, move, and command a room.
-  </p>
-</section>
+<!-- ACCESS THE ERA button -->
+<button id="access-btn" aria-label="Access the Era">
+  <span class="btn-label">Access the Era</span>
+  <span class="btn-line"></span>
+</button>
 
-<!-- COLLECTIONS -->
-<section class="collections" id="collections">
-  <div class="collections-header">
-    <h2>The Collections</h2>
-    <a href="#waitlist" class="btn-outline">Be First to Shop</a>
-  </div>
-  <div class="collections-grid">
-    <div class="collection-card">
-      <div class="card-bg card-bg-1"></div>
-      <div class="card-texture"><div class="card-icon">🖤</div></div>
-      <div class="card-overlay">
-        <span class="card-tag">Collection 01</span>
-        <h3 class="card-title">Obsidian<br>Noir</h3>
-        <p class="card-desc">Sharp tailoring in matte black. For the woman who walks in and owns the room.</p>
-        <div class="card-arrow"></div>
-      </div>
-    </div>
-    <div class="collection-card">
-      <div class="card-bg card-bg-2"></div>
-      <div class="card-texture"><div class="card-icon">✨</div></div>
-      <div class="card-overlay">
-        <span class="card-tag">Collection 02</span>
-        <h3 class="card-title">Golden<br>Hour</h3>
-        <p class="card-desc">Metallic gold accents on fluid silhouettes. Effortless luxury, day to night.</p>
-        <div class="card-arrow"></div>
-      </div>
-    </div>
-    <div class="collection-card">
-      <div class="card-bg card-bg-3"></div>
-      <div class="card-texture"><div class="card-icon">🏺</div></div>
-      <div class="card-overlay">
-        <span class="card-tag">Collection 03</span>
-        <h3 class="card-title">Clay &<br>Sand</h3>
-        <p class="card-desc">Earthy tones, raw textures. Rooted in India, styled for the world.</p>
-        <div class="card-arrow"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- CLAY / STORY SECTION -->
-<section class="clay-section">
-  <div class="clay-content">
-    <p class="section-label">The O'HERA Story</p>
-    <h2>Where the west<br>meets <span>Indian ground.</span></h2>
-    <p>
-      Every O'HERA piece is built on a contradiction — the sharp, bold lines of western fashion, grounded in the warmth and texture of India. Like a mud house with a glass ceiling.
-    </p>
-    <p>
-      We design for women who don't choose between their roots and their ambition. You can wear both. You can be both.
-    </p>
-    <a href="#waitlist" class="btn-primary" style="margin-top: 16px;">Own Your Era →</a>
-  </div>
-  <div class="clay-visual">
-    <div class="clay-visual-inner">
-      <span class="big-icon">🏺</span>
-      <p class="clay-visual-quote">"She didn't follow the era — she became it."</p>
-    </div>
-  </div>
-</section>
-
-<!-- WAITLIST -->
-<section class="waitlist" id="waitlist">
-  <p class="section-label">Coming Soon</p>
-  <h2>Be First to<br><span>Own Your Era.</span></h2>
-  <p>Join the waitlist for early access, launch offers, and first look at collections.</p>
-  <form class="waitlist-form" onsubmit="handleSubmit(event)">
-    <input type="email" placeholder="Enter your email address" required>
-    <button type="submit">Join Now</button>
-  </form>
-  <p class="waitlist-note">No spam. Just your era, arriving soon.</p>
-</section>
-
-<!-- FOOTER -->
-<footer>
-  <div>
-    <div class="footer-logo">
+<!-- ── MAIN SITE (revealed after vault) ── -->
+<div id="main-site">
+  <nav>
+    <a href="#" class="nav-logo">
       <img src="ohera-icon.svg" alt="O'HERA">
-      <span class="footer-logo-text">O'HERA</span>
+      <span>O'HERA</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#collections">Collections</a></li>
+      <li><a href="#story">Story</a></li>
+      <li><a href="#waitlist">Waitlist</a></li>
+    </ul>
+  </nav>
+
+  <section class="site-hero">
+    <p class="site-hero-eyebrow">New Women's Western Wear — India</p>
+    <h1 class="site-hero-title"><span class="apos">O'</span>HERA</h1>
+    <p class="site-hero-sub">Own Your Era</p>
+    <div class="hero-btns">
+      <a href="#collections" class="btn-gold">Explore Collections</a>
+      <a href="#waitlist" class="btn-outline">Join the Waitlist</a>
     </div>
-    <div class="footer-tagline">Own Your Era</div>
+  </section>
+
+  <div class="marquee-bar">
+    <div class="marquee-track">
+      <span>Own Your Era <span class="dot">✦</span></span>
+      <span>Western Wear <span class="dot">✦</span></span>
+      <span>Made for India <span class="dot">✦</span></span>
+      <span>Obsidian Black <span class="dot">✦</span></span>
+      <span>O'HERA <span class="dot">✦</span></span>
+      <span>Unapologetically You <span class="dot">✦</span></span>
+      <span>Own Your Era <span class="dot">✦</span></span>
+      <span>Western Wear <span class="dot">✦</span></span>
+      <span>Made for India <span class="dot">✦</span></span>
+      <span>Obsidian Black <span class="dot">✦</span></span>
+      <span>O'HERA <span class="dot">✦</span></span>
+      <span>Unapologetically You <span class="dot">✦</span></span>
+    </div>
   </div>
-  <div class="footer-links">
-    <a href="#collections">Collections</a>
-    <a href="#story">Our Story</a>
-    <a href="#waitlist">Waitlist</a>
-    <a href="mailto:hello@ohera.in">Contact</a>
-  </div>
-  <div class="footer-copy">© 2026 O'HERA. All rights reserved.</div>
-</footer>
+
+  <section class="manifesto" id="story">
+    <p class="section-label">Our Manifesto</p>
+    <h2 class="manifesto-text">
+      Clothes that don't ask for permission.<br>
+      Silhouettes built for <em>the woman who leads.</em>
+    </h2>
+    <p class="manifesto-sub">O'HERA is western wear designed for the modern Indian woman — bold, fluid, and entirely her own. We blend sharp western cuts with a deep respect for how Indian women actually live, move, and command a room.</p>
+  </section>
+
+  <section class="collections" id="collections">
+    <div class="collections-header">
+      <h2>The Collections</h2>
+      <a href="#waitlist" class="btn-outline">Be First to Shop</a>
+    </div>
+    <div class="collections-grid">
+      <div class="collection-card">
+        <div class="card-bg card-bg-1"></div>
+        <div class="card-overlay">
+          <span class="card-tag">Collection 01</span>
+          <h3 class="card-title">Obsidian<br>Noir</h3>
+          <p class="card-desc">Sharp tailoring in matte black. For the woman who walks in and owns the room.</p>
+          <div class="card-arrow"></div>
+        </div>
+      </div>
+      <div class="collection-card">
+        <div class="card-bg card-bg-2"></div>
+        <div class="card-overlay">
+          <span class="card-tag">Collection 02</span>
+          <h3 class="card-title">Golden<br>Hour</h3>
+          <p class="card-desc">Metallic gold accents on fluid silhouettes. Effortless luxury, day to night.</p>
+          <div class="card-arrow"></div>
+        </div>
+      </div>
+      <div class="collection-card">
+        <div class="card-bg card-bg-3"></div>
+        <div class="card-overlay">
+          <span class="card-tag">Collection 03</span>
+          <h3 class="card-title">Clay &<br>Sand</h3>
+          <p class="card-desc">Earthy tones, raw textures. Rooted in India, styled for the world.</p>
+          <div class="card-arrow"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="story-section">
+    <div class="story-content">
+      <p class="section-label">The O'HERA Story</p>
+      <h2>Where the west<br>meets <span>Indian ground.</span></h2>
+      <p>Every O'HERA piece is built on a contradiction — the sharp, bold lines of western fashion, grounded in the warmth and texture of India. Like a mud house with a glass ceiling.</p>
+      <p>We design for women who don't choose between their roots and their ambition. You can wear both. You can be both.</p>
+      <a href="#waitlist" class="btn-gold" style="margin-top:16px; display:inline-block;">Own Your Era →</a>
+    </div>
+    <div class="story-visual">
+      <div class="story-visual-inner">
+        <img src="ohera-icon.svg" alt="">
+        <p class="story-quote">"She didn't follow the era —<br>she became it."</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="waitlist" id="waitlist">
+    <p class="section-label">Coming Soon</p>
+    <h2>Be First to<br><span>Own Your Era.</span></h2>
+    <p>Join the waitlist for early access, launch offers, and first look at collections.</p>
+    <form class="waitlist-form" onsubmit="handleSubmit(event)">
+      <input type="email" placeholder="Enter your email address" required>
+      <button type="submit">Join Now</button>
+    </form>
+    <p class="waitlist-note">No spam. Just your era, arriving soon.</p>
+  </section>
+
+  <footer>
+    <div>
+      <div class="footer-brand">
+        <img src="ohera-icon.svg" alt="O'HERA">
+        <span class="footer-brand-text">O'HERA</span>
+      </div>
+      <div class="footer-tagline">Own Your Era</div>
+    </div>
+    <div class="footer-links">
+      <a href="#collections">Collections</a>
+      <a href="#story">Our Story</a>
+      <a href="#waitlist">Waitlist</a>
+      <a href="mailto:hello@ohera.in">Contact</a>
+    </div>
+    <div class="footer-copy">© 2026 O'HERA. All rights reserved.</div>
+  </footer>
+</div>
 
 <script>
-  function handleSubmit(e) {
+(function() {
+  const defaultCursor = document.getElementById('default-cursor');
+  const gemCursor     = document.getElementById('gem-cursor');
+  const wordmarkGem   = document.getElementById('wordmark-gem');
+  const ghost         = document.querySelector('.apostrophe-ghost');
+  const accessBtn     = document.getElementById('access-btn');
+  const entry         = document.getElementById('entry');
+
+  let mx = -999, my = -999;
+  let gemFlown = false;
+  let gemFlyAnim = null;
+
+  // Track mouse
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    defaultCursor.style.left = mx + 'px';
+    defaultCursor.style.top  = my + 'px';
+    if (gemFlown) {
+      gemCursor.style.left = mx + 'px';
+      gemCursor.style.top  = my + 'px';
+    } else {
+      flyGemToCursor();
+    }
+  });
+
+  // Show access button after brief delay
+  setTimeout(() => accessBtn.classList.add('visible'), 800);
+
+  function flyGemToCursor() {
+    if (gemFlown || !wordmarkGem) return;
+    gemFlown = true;
+
+    // Get wordmark gem's current screen position
+    const rect = wordmarkGem.getBoundingClientRect();
+    const startX = rect.left + rect.width / 2;
+    const startY = rect.top  + rect.height / 2;
+    const startSize = rect.width;
+
+    // Position gem cursor at starting position, full size
+    gemCursor.style.width  = startSize + 'px';
+    gemCursor.style.height = startSize + 'px';
+    gemCursor.style.left   = startX + 'px';
+    gemCursor.style.top    = startY + 'px';
+    gemCursor.style.transition = 'none';
+    gemCursor.style.opacity = '1';
+
+    // Fade out wordmark gem, show ghost apostrophe
+    wordmarkGem.style.opacity = '0';
+    ghost.style.opacity = '1';
+    defaultCursor.style.opacity = '0';
+
+    // Animate: fly to cursor position + shrink to 28px
+    requestAnimationFrame(() => {
+      gemCursor.style.transition = 'left 0.65s cubic-bezier(0.34,1.26,0.64,1), top 0.65s cubic-bezier(0.34,1.26,0.64,1), width 0.65s ease, height 0.65s ease';
+      gemCursor.style.left   = mx + 'px';
+      gemCursor.style.top    = my + 'px';
+      gemCursor.style.width  = '28px';
+      gemCursor.style.height = '28px';
+    });
+
+    // After animation: lock to mouse frame-perfect
+    setTimeout(() => {
+      gemCursor.style.transition = 'none';
+      trackGemCursor();
+    }, 680);
+  }
+
+  function trackGemCursor() {
+    gemCursor.style.left = mx + 'px';
+    gemCursor.style.top  = my + 'px';
+    requestAnimationFrame(trackGemCursor);
+  }
+
+  // ACCESS THE ERA — vault open
+  accessBtn.addEventListener('click', openVault);
+
+  function openVault() {
+    accessBtn.style.display = 'none';
+
+    // Brief crack: show seam
+    document.body.classList.add('vault-cracking');
+
+    setTimeout(() => {
+      document.body.classList.add('vault-open');
+
+      // Fade out entry
+      setTimeout(() => {
+        entry.style.transition = 'opacity 0.4s';
+        entry.style.opacity = '0';
+      }, 200);
+
+      // Remove vault panels after animation
+      setTimeout(() => {
+        document.getElementById('vault-left').style.display = 'none';
+        document.getElementById('vault-right').style.display = 'none';
+        entry.style.display = 'none';
+        document.body.style.overflow = '';
+      }, 1400);
+
+    }, 120);
+  }
+
+  // Waitlist
+  window.handleSubmit = function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button');
     btn.textContent = 'You\'re In ✦';
-    btn.style.background = '#2a1a06';
+    btn.style.background = 'transparent';
     btn.style.color = '#c9a84c';
+    btn.style.border = '1px solid #c9a84c';
     e.target.querySelector('input').value = '';
-    setTimeout(() => { btn.textContent = 'Join Now'; btn.style.background = ''; btn.style.color = ''; }, 3000);
-  }
+    setTimeout(() => {
+      btn.textContent = 'Join Now';
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.border = '';
+    }, 3000);
+  };
+})();
 </script>
-
 </body>
 </html>
