@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'HERA — Own Your Era</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;1,200;1,300;1,400&family=Montserrat:wght@100;200;300;400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C9A84C;
+      --gold-bright: #E2C56A;
+      --black: #080808;
+      --off-white: #F5F2EC;
+    }
+
+    html { background: var(--black); }
+
+    body {
+      background: var(--black);
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      overflow: hidden;
+    }
+    body.vault-open {
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    /* Hide system cursor everywhere until vault opens */
+    body:not(.vault-open) * { cursor: none !important; }
+    body.vault-open { cursor: auto; }
+
+    /* ─── CUSTOM CURSOR ────────────────────────────── */
+    #cursor {
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      will-change: transform;
+    }
+    #cursor .gem {
+      width: 14px;
+      height: 14px;
+      background: var(--gold);
+      transform: rotate(45deg);
+      box-shadow:
+        0 0 6px var(--gold),
+        0 0 18px rgba(201,168,76,0.5),
+        0 0 40px rgba(201,168,76,0.2);
+      animation: gem-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes gem-pulse {
+      0%,100% { box-shadow: 0 0 6px var(--gold), 0 0 18px rgba(201,168,76,0.5); }
+      50%      { box-shadow: 0 0 10px var(--gold-bright), 0 0 30px rgba(226,197,106,0.7), 0 0 60px rgba(201,168,76,0.3); }
+    }
+
+    /* ─── ENTRANCE PORTAL ──────────────────────────── */
+    #entrance {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: opacity 0.5s ease 0.3s;
+    }
+    #entrance.fade-out { opacity: 0; }
+
+    /* Fine noise texture overlay on entrance */
+    #entrance::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    #wordmark {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(4.5rem, 13vw, 11rem);
+      font-weight: 200;
+      letter-spacing: 0.06em;
+      color: var(--off-white);
+      line-height: 1;
+      white-space: nowrap;
+      animation: wordmark-in 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+    @keyframes wordmark-in {
+      from { opacity: 0; letter-spacing: 0.18em; }
+      to   { opacity: 1; letter-spacing: 0.06em; }
+    }
+
+    #apos-logo {
+      color: var(--gold);
+      font-style: italic;
+      font-weight: 300;
+      transition: opacity 0.5s ease;
+      display: inline-block;
+    }
+
+    #tagline {
+      margin-top: 1.6rem;
+      font-size: clamp(0.5rem, 1.6vw, 0.72rem);
+      font-weight: 200;
+      letter-spacing: 0.65em;
+      color: rgba(255,255,255,0.25);
+      text-transform: uppercase;
+      animation: tagline-in 2.4s ease forwards;
+      opacity: 0;
+    }
+    @keyframes tagline-in {
+      0%   { opacity: 0; }
+      60%  { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    /* ─── VAULT DOOR PANELS ────────────────────────── */
+    #door-top, #door-bottom {
+      position: fixed;
+      left: 0; right: 0;
+      background: var(--black);
+      z-index: 250;
+      transition: transform 1.5s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+    #door-top    { top: 0;    height: 50vh; }
+    #door-bottom { bottom: 0; height: 50vh; }
+
+    /* The gold seam line */
+    #door-top::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent 0%, var(--gold) 20%, var(--gold-bright) 50%, var(--gold) 80%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    #door-top.sealed::after  { opacity: 1; }
+    #door-top.open           { transform: translateY(-100%); }
+    #door-bottom.open        { transform: translateY(100%); }
+
+    /* ─── ACCESS BUTTON ────────────────────────────── */
+    #access-btn {
+      position: fixed;
+      bottom: 3rem;
+      right: 4rem;
+      z-index: 400;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 300;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 1rem 2.2rem;
+      transition: color 0.35s ease, border-color 0.35s ease, opacity 0.5s ease;
+      animation: btn-in 3s ease forwards;
+      opacity: 0;
+    }
+    @keyframes btn-in {
+      0%, 70% { opacity: 0; }
+      100%     { opacity: 1; }
+    }
+    #access-btn:hover {
+      color: var(--gold);
+      border-color: rgba(201,168,76,0.4);
+    }
+    #access-btn.gone {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    /* ─── VAULT INTERIOR ───────────────────────────── */
+    #vault {
+      position: relative;
+      z-index: 100;
+      min-height: 100vh;
+      opacity: 0;
+      transition: opacity 0.8s ease 1.1s;
+    }
+    #vault.visible { opacity: 1; }
+
+    .vault-header {
+      padding: 2.5rem 3.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .vault-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      color: var(--off-white);
+    }
+    .vault-logo span { color: var(--gold); font-style: italic; }
+
+    .vault-nav {
+      display: flex;
+      gap: 3rem;
+      font-size: 0.58rem;
+      font-weight: 200;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+    }
+    .vault-nav a {
+      color: rgba(255,255,255,0.35);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .vault-nav a:hover { color: var(--gold); }
+
+    /* ─── EDITORIAL GRID ───────────────────────────── */
+    .grid-wrap {
+      padding: 4px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-auto-rows: 76px;
+      gap: 4px;
+    }
+
+    .gi {
+      overflow: hidden;
+      position: relative;
+      background: #111;
+    }
+    .gi img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.8) saturate(0.75);
+      transition: transform 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  filter 0.7s ease;
+    }
+    .gi:hover img {
+      transform: scale(1.07);
+      filter: brightness(0.95) saturate(1.1);
+    }
+    .gi .cap {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1.2rem 1.4rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      transform: translateY(4px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .gi:hover .cap { opacity: 1; transform: translateY(0); }
+    .cap .col-label {
+      display: block;
+      font-size: 0.5rem;
+      font-weight: 300;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+    .cap .col-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: #fff;
+      line-height: 1;
+    }
+
+    /* Text editorial blocks */
+    .gi-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 1.8rem 2rem;
+      background: #0c0c0c;
+    }
+    .gi-text .big {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 3.5vw, 3.2rem);
+      font-weight: 200;
+      line-height: 1.05;
+      color: var(--off-white);
+    }
+    .gi-text .big em { color: var(--gold); font-style: italic; }
+    .gi-text .rule {
+      width: 32px; height: 1px;
+      background: var(--gold);
+      margin: 0.9rem 0;
+    }
+    .gi-text .sub {
+      font-size: 0.55rem;
+      font-weight: 200;
+      letter-spacing: 0.4em;
+      color: rgba(255,255,255,0.25);
+      text-transform: uppercase;
+    }
+
+    /* Gold accent block */
+    .gi-gold {
+      background: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gi-gold .gem-icon {
+      width: 18px; height: 18px;
+      background: rgba(0,0,0,0.2);
+      transform: rotate(45deg);
+    }
+
+    /* Grid placement — asymmetric editorial layout */
+    .g1  { grid-column: 1 / 6;  grid-row: 1 / 9;  }
+    .g2  { grid-column: 6 / 9;  grid-row: 1 / 5;  }
+    .g3  { grid-column: 9 / 13; grid-row: 1 / 7;  }
+    .g4  { grid-column: 6 / 9;  grid-row: 5 / 10; }
+    .g5  { grid-column: 9 / 12; grid-row: 7 / 11; }
+    .g6  { grid-column: 12 / 13;grid-row: 7 / 11; }
+    .g7  { grid-column: 1 / 4;  grid-row: 9 / 15; }
+    .g8  { grid-column: 4 / 8;  grid-row: 10 / 15;}
+    .g9  { grid-column: 8 / 13; grid-row: 11 / 16;}
+    .g10 { grid-column: 1 / 5;  grid-row: 15 / 20;}
+    .g11 { grid-column: 5 / 8;  grid-row: 15 / 19;}
+    .g12 { grid-column: 8 / 11; grid-row: 16 / 20;}
+    .g13 { grid-column: 11 / 13;grid-row: 16 / 20;}
+
+    /* ─── VAULT FOOTER ─────────────────────────────── */
+    .vault-footer {
+      padding: 7rem 3.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: end;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .footer-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.8rem, 5.5vw, 5rem);
+      font-weight: 200;
+      line-height: 1.05;
+      color: var(--off-white);
+    }
+    .footer-heading em { color: var(--gold); font-style: italic; }
+    .footer-rule { width: 40px; height: 1px; background: var(--gold); margin: 2rem 0; }
+    .footer-sub {
+      font-size: 0.62rem;
+      font-weight: 200;
+      letter-spacing: 0.3em;
+      color: rgba(255,255,255,0.25);
+      text-transform: uppercase;
+      line-height: 2.2;
+    }
+
+    .waitlist-label {
+      font-size: 0.58rem;
+      font-weight: 200;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 1.2rem;
+    }
+    .form-row {
+      display: flex;
+    }
+    .form-row input {
+      flex: 1;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-right: none;
+      padding: 1rem 1.4rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 200;
+      letter-spacing: 0.2em;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    .form-row input::placeholder { color: rgba(255,255,255,0.2); }
+    .form-row input:focus { border-color: rgba(201,168,76,0.35); }
+    .form-row button {
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      color: var(--black);
+      padding: 1rem 2rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 400;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      transition: background 0.3s ease;
+    }
+    .form-row button:hover { background: var(--gold-bright); }
+    .form-note {
+      margin-top: 0.9rem;
+      font-size: 0.52rem;
+      font-weight: 200;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.18);
+    }
+
+    /* ─── MOBILE ────────────────────────────────────── */
+    @media (max-width: 768px) {
+      body:not(.vault-open) * { cursor: auto !important; }
+      #cursor { display: none; }
+
+      #access-btn {
+        bottom: 2rem;
+        right: 50%;
+        transform: translateX(50%);
+      }
+
+      .grid-wrap {
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: 200px;
+      }
+      .g1  { grid-column: 1/3; grid-row: 1/2;  }
+      .g2  { grid-column: 1/2; grid-row: 2/3;  }
+      .g3  { grid-column: 2/3; grid-row: 2/3;  }
+      .g4  { grid-column: 1/3; grid-row: 3/4;  }
+      .g5  { grid-column: 1/2; grid-row: 4/5;  }
+      .g6  { display: none; }
+      .g7  { grid-column: 1/3; grid-row: 5/6;  }
+      .g8  { grid-column: 1/2; grid-row: 6/7;  }
+      .g9  { grid-column: 2/3; grid-row: 6/7;  }
+      .g10 { grid-column: 1/3; grid-row: 7/8;  }
+      .g11 { grid-column: 1/2; grid-row: 8/9;  }
+      .g12 { grid-column: 2/3; grid-row: 8/9;  }
+      .g13 { display: none; }
+
+      .gi-text .big { font-size: 1.6rem; }
+      .vault-nav { display: none; }
+      .vault-header { padding: 1.8rem 1.5rem; }
+
+      .vault-footer {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        padding: 4rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Diamond cursor -->
+  <div id="cursor"><div class="gem"></div></div>
+
+  <!-- Vault door panels -->
+  <div id="door-top"></div>
+  <div id="door-bottom"></div>
+
+  <!-- Entrance wordmark — floats above doors -->
+  <div id="entrance">
+    <div id="wordmark">O<span id="apos-logo">'</span>HERA</div>
+    <div id="tagline">Own Your Era</div>
+  </div>
+
+  <!-- Access button -->
+  <button id="access-btn">Access The Era</button>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- VAULT INTERIOR                                  -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="vault">
+
+    <header class="vault-header">
+      <div class="vault-logo">O<span>'</span>HERA</div>
+      <nav class="vault-nav">
+        <a href="#">Collections</a>
+        <a href="#">Lookbook</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </nav>
+    </header>
+
+    <div class="grid-wrap">
+
+      <!-- G1 — Large hero, Obsidian Noir -->
+      <div class="gi g1">
+        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&q=85" alt="Obsidian Noir">
+        <div class="cap">
+          <span class="col-label">Collection I</span>
+          <span class="col-name">Obsidian Noir</span>
+        </div>
+      </div>
+
+      <!-- G2 — Text block -->
+      <div class="gi g2 gi-text">
+        <div class="big">Wear<br>the <em>night.</em></div>
+        <div class="rule"></div>
+        <div class="sub">SS 2025</div>
+      </div>
+
+      <!-- G3 — Golden Hour fashion -->
+      <div class="gi g3">
+        <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=85" alt="Golden Hour">
+        <div class="cap">
+          <span class="col-label">Collection II</span>
+          <span class="col-name">Golden Hour</span>
+        </div>
+      </div>
+
+      <!-- G4 — After Dark -->
+      <div class="gi g4">
+        <img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=700&q=85" alt="After Dark">
+        <div class="cap">
+          <span class="col-label">Ready to Wear</span>
+          <span class="col-name">After Dark</span>
+        </div>
+      </div>
+
+      <!-- G5 — Texture: earth -->
+      <div class="gi g5">
+        <img src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=85" alt="Earth">
+        <div class="cap">
+          <span class="col-label">Texture</span>
+          <span class="col-name">Raw Earth</span>
+        </div>
+      </div>
+
+      <!-- G6 — Gold accent -->
+      <div class="gi gi-gold g6">
+        <div class="gem-icon"></div>
+      </div>
+
+      <!-- G7 — Clay & Sand earthy -->
+      <div class="gi g7">
+        <img src="https://images.unsplash.com/photo-1504274066651-8d31a536b11a?w=600&q=85" alt="Clay and Sand">
+        <div class="cap">
+          <span class="col-label">Collection III</span>
+          <span class="col-name">Clay &amp; Sand</span>
+        </div>
+      </div>
+
+      <!-- G8 — Text editorial -->
+      <div class="gi g8 gi-text">
+        <div class="big"><em>Your</em><br>era.<br>Owned.</div>
+        <div class="sub">O'HERA — Est. 2025</div>
+      </div>
+
+      <!-- G9 — The Silhouette -->
+      <div class="gi g9">
+        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=900&q=85" alt="The Silhouette">
+        <div class="cap">
+          <span class="col-label">Signature</span>
+          <span class="col-name">The Silhouette</span>
+        </div>
+      </div>
+
+      <!-- G10 — New Guard western -->
+      <div class="gi g10">
+        <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=700&q=85" alt="New Guard">
+        <div class="cap">
+          <span class="col-label">Western</span>
+          <span class="col-name">New Guard</span>
+        </div>
+      </div>
+
+      <!-- G11 — Text editorial -->
+      <div class="gi g11 gi-text">
+        <div class="big">Bold.<br><em>Raw.</em><br>Free.</div>
+        <div class="rule"></div>
+        <div class="sub">For women who own every room</div>
+      </div>
+
+      <!-- G12 — Untamed editorial -->
+      <div class="gi g12">
+        <img src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=85" alt="Untamed">
+        <div class="cap">
+          <span class="col-label">Editorial</span>
+          <span class="col-name">Untamed</span>
+        </div>
+      </div>
+
+      <!-- G13 — Diamond accent -->
+      <div class="gi g13" style="background:#0d0d0d; display:flex; align-items:center; justify-content:center;">
+        <div style="width:22px;height:22px;background:var(--gold);transform:rotate(45deg);box-shadow:0 0 20px rgba(201,168,76,0.6),0 0 60px rgba(201,168,76,0.2);"></div>
+      </div>
+
+    </div>
+
+    <!-- Footer / Waitlist -->
+    <div class="vault-footer">
+      <div>
+        <h2 class="footer-heading">You've entered<br>the <em>era.</em></h2>
+        <div class="footer-rule"></div>
+        <p class="footer-sub">
+          Western wear, Indian ground.<br>
+          Obsidian nights. Golden light.<br>
+          The women who own every room.
+        </p>
+      </div>
+      <div>
+        <p class="waitlist-label">Join the waitlist</p>
+        <div class="form-row">
+          <input type="email" placeholder="your@email.com">
+          <button type="button">Enter</button>
+        </div>
+        <p class="form-note">First access. Early drops. No noise.</p>
+      </div>
+    </div>
+
+  </div>
+  <!-- /vault -->
+
+  <script>
+    const cursor   = document.getElementById('cursor');
+    const aposLogo = document.getElementById('apos-logo');
+    const btn      = document.getElementById('access-btn');
+    const entrance = document.getElementById('entrance');
+    const vault    = document.getElementById('vault');
+    const doorTop  = document.getElementById('door-top');
+    const doorBot  = document.getElementById('door-bottom');
+
+    let mouseX = window.innerWidth  / 2;
+    let mouseY = window.innerHeight / 2;
+    let activated = false;
+    let opened    = false;
+
+    /* ── Cursor tracking ────────────────────────────── */
+    document.addEventListener('mousemove', e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      cursor.style.left = mouseX + 'px';
+      cursor.style.top  = mouseY + 'px';
+      if (!activated && !opened) wakeUpCursor();
+    });
+
+    function wakeUpCursor() {
+      if (activated) return;
+      activated = true;
+
+      // Teleport cursor to the apostrophe in the wordmark
+      const r = aposLogo.getBoundingClientRect();
+      cursor.style.left = (r.left + r.width  / 2) + 'px';
+      cursor.style.top  = (r.top  + r.height / 2) + 'px';
+      cursor.style.opacity = '1';
+
+      // Apostrophe in logo "detaches" — hide it
+      aposLogo.style.opacity = '0';
+
+      // Seal the door seam (gold line appears)
+      doorTop.classList.add('sealed');
+    }
+
+    /* ── Vault opening ──────────────────────────────── */
+    btn.addEventListener('click', () => {
+      if (opened) return;
+      opened = true;
+
+      // Wake cursor if user clicked without moving mouse (touch fallback)
+      if (!activated) wakeUpCursor();
+
+      btn.classList.add('gone');
+
+      // Small delay, then split the doors
+      setTimeout(() => {
+        doorTop.classList.add('open');
+        doorBot.classList.add('open');
+        entrance.classList.add('fade-out');
+        vault.classList.add('visible');
+      }, 80);
+
+      // After animation — restore normal state
+      setTimeout(() => {
+        cursor.style.opacity = '0';
+        document.body.classList.add('vault-open');
+        entrance.style.display = 'none';
+        doorTop.style.display  = 'none';
+        doorBot.style.display  = 'none';
+        btn.style.display      = 'none';
+      }, 1700);
+    });
+
+    /* ── Mobile: touch triggers open directly ───────── */
+    const isTouchDevice = window.matchMedia('(hover: none)').matches;
+    if (isTouchDevice) {
+      btn.style.animation = 'none';
+      btn.style.opacity   = '1';
+      // No cursor animation on touch
+      document.removeEventListener('mousemove', () => {});
+    }
+  </script>
+</body>
+</html>
