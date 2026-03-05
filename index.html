@@ -90,23 +90,21 @@
 
     #apos-overlay {
       position: absolute;
-      left:   20.2%;
-      top:     1.3%;
-      width:   4.1%;
-      /* height = 21.9% of image's rendered height.
-         Image height = container_width * (558/1800) = container_width * 0.31
-         So height as % of container_width = 21.9% * 0.31 ≈ 6.79%
-         We express this via padding-top trick below, but simpler:
-         just set height in % of the parent (which auto-sizes from the img).
-         CSS % height on abs-positioned child = % of parent's height.
-         Parent height = image height = auto. This works once img is loaded. */
-      height: 21.9%;
+      /* left/width are % of parent WIDTH — reliable */
+      left:  20.2%;
+      width:  4.1%;
+      /* top/height are set in JS from rendered image height,
+         because % of an auto-height parent resolves to 0 in CSS */
+      top:    0;
+      height: 0;
       pointer-events: none;
       transition: opacity 0.15s ease;
       will-change: transform;
+      overflow: visible; /* let img show even before JS runs */
     }
 
     #apos-overlay img {
+      /* Fill whatever size JS gives us; use contain so gem doesn't distort */
       width: 100%;
       height: 100%;
       object-fit: contain;
@@ -477,10 +475,8 @@
     });
 
     // ── APOSTROPHE PARALLAX (Portal) ──────────────────────────
-    // The gem inside the wordmark subtly tracks the mouse with
-    // a smooth lerp — feels alive, like a magnet pulling toward cursor.
-    const PARALLAX_RANGE = 14; // max px drift in any direction
-    const LERP_FACTOR    = 0.07;
+    const PARALLAX_RANGE = 26; // max px drift — visible on a ~28px element
+    const LERP_FACTOR    = 0.09;
 
     let lerpX = 0, lerpY = 0; // current interpolated offset
     let rafId = null;
@@ -506,8 +502,21 @@
     function onReady() {
       S.ready = true;
       wImg.classList.add('ready');
+
+      // Fix overlay geometry in JS — CSS % height resolves to 0 when parent
+      // is height:auto, so we must compute from the rendered image dimensions.
+      const imgH = wImg.getBoundingClientRect().height;
+      aposOverlay.style.top    = (imgH * 0.013) + 'px'; //  1.3% of image height
+      aposOverlay.style.height = (imgH * 0.219) + 'px'; // 21.9% of image height
+
+      // Recompute on resize so it stays aligned
+      window.addEventListener('resize', () => {
+        const h = wImg.getBoundingClientRect().height;
+        aposOverlay.style.top    = (h * 0.013) + 'px';
+        aposOverlay.style.height = (h * 0.219) + 'px';
+      });
+
       setTimeout(() => btn.classList.add('visible'), 380);
-      // Start apostrophe parallax once wordmark is visible
       tickParallax();
     }
 
