@@ -9,7 +9,7 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { height: 100%; }
 body { width: 100%; min-height: 100%; background: #080808; overflow: hidden; }
-* { cursor: none !important; }
+@media (hover: hover) and (pointer: fine) { * { cursor: none !important; } }
 
 /* ─── CUSTOM CURSOR ─── */
 #cursor-dot {
@@ -38,6 +38,36 @@ body { width: 100%; min-height: 100%; background: #080808; overflow: hidden; }
   background: #080808;
   overflow: hidden;
 }
+
+/* CSS text fallback — visible immediately while PNG loads */
+#entry-fallback {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 1; pointer-events: none;
+  opacity: 1; transition: opacity 0.4s ease;
+}
+#entry-fallback.hidden { opacity: 0; }
+.fb-wordmark {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: clamp(64px, 13vw, 160px);
+  letter-spacing: 0.05em;
+  color: #f0ece4;
+  line-height: 1;
+}
+.fb-wordmark .fb-apos { color: #c9a84c; }
+.fb-tagline {
+  margin-top: 14px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(8px, 1vw, 11px);
+  font-weight: 200;
+  letter-spacing: 0.55em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+/* PNG wordmark fades in on load */
+.wm-container { opacity: 0; transition: opacity 0.5s ease; }
+.wm-container.loaded { opacity: 1; }
 
 /* Subtle vignette */
 #entry::after {
@@ -510,7 +540,7 @@ footer {
 
 <!-- CURSOR -->
 <div id="cursor-dot"></div>
-<div id="gem-cursor"><img src="ohera-icon.svg" alt=""></div>
+<div id="gem-cursor"><img src="ohera-gem-small.png" alt=""></div>
 
 <!-- VAULT PANELS -->
 <div id="vault-l"></div>
@@ -518,11 +548,16 @@ footer {
 
 <!-- ─── ENTRY PORTAL ─── -->
 <div id="entry">
+  <!-- Instant CSS fallback shown while PNG loads -->
+  <div id="entry-fallback">
+    <div class="fb-wordmark">O<span class="fb-apos">'</span>HERA</div>
+    <div class="fb-tagline">Own Your Era</div>
+  </div>
   <div class="wm-container">
     <!-- Full official PNG wordmark (RGBA, transparent bg) -->
     <img class="wm-logo-png" src="ohera-wordmark.png" alt="O'HERA — Own Your Era" draggable="false">
     <!-- Interactive gem layer positioned over the apostrophe in the PNG -->
-    <img id="gem-overlay" src="ohera-icon.svg" alt="" draggable="false">
+    <img id="gem-overlay" src="ohera-gem-small.png" alt="" draggable="false">
     <!-- Ghost mark after gem departs -->
     <div id="gem-ghost">'</div>
   </div>
@@ -538,7 +573,7 @@ footer {
 <div id="main-site">
   <nav>
     <a href="#" class="nav-logo">
-      <img src="ohera-icon.svg" alt="O'HERA" class="nav-logo-img">
+      <img src="ohera-gem-small.png" alt="O'HERA" class="nav-logo-img">
       <span class="nav-brand">O'HERA</span>
     </a>
     <ul class="nav-links">
@@ -675,7 +710,7 @@ footer {
   <footer>
     <div>
       <div class="footer-brand">
-        <img src="ohera-icon.svg" alt="O'HERA">
+        <img src="ohera-gem-small.png" alt="O'HERA">
         <span class="footer-name">O'HERA</span>
       </div>
       <div class="footer-tag">Own Your Era</div>
@@ -703,7 +738,30 @@ footer {
   let gemLaunched = false;
   let tracking = false;
 
-  /* ── Mouse tracking ── */
+  /* ── Wordmark PNG fade-in on load ── */
+  const wmContainer = document.querySelector('.wm-container');
+  const wmPng = document.querySelector('.wm-logo-png');
+  const fallback = document.getElementById('entry-fallback');
+  if (wmPng) {
+    const showWm = () => {
+      wmContainer.classList.add('loaded');
+      fallback.classList.add('hidden');
+    };
+    wmPng.complete ? showWm() : wmPng.addEventListener('load', showWm);
+  }
+
+  /* ── Detect mobile/touch ── */
+  const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches || 'ontouchstart' in window;
+
+  if (isMobile) {
+    /* On mobile: hide cursor, skip gem animation, just show the vault button */
+    dot.style.display = 'none';
+    gemCursor.style.display = 'none';
+    document.documentElement.style.setProperty('cursor', 'auto', 'important');
+    document.querySelectorAll('*').forEach(el => el.style.cursor = '');
+  }
+
+  /* ── Mouse tracking (desktop) ── */
   document.addEventListener('mousemove', e => {
     mx = e.clientX; my = e.clientY;
     dot.style.left = mx + 'px';
@@ -714,6 +772,17 @@ footer {
     }
     if (!gemLaunched) launchGem();
   });
+
+  /* ── Touch: tap anywhere on entry to trigger vault ── */
+  if (isMobile) {
+    let tapped = false;
+    entry.addEventListener('touchend', e => {
+      if (tapped) return;
+      /* First tap: just show button prominently */
+      tapped = true;
+      accessBtn.classList.add('show');
+    }, { passive: true });
+  }
 
   /* Show ACCESS button after page loads */
   setTimeout(() => accessBtn.classList.add('show'), 700);
