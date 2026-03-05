@@ -39,34 +39,44 @@ body { width: 100%; min-height: 100%; background: #080808; overflow: hidden; }
   overflow: hidden;
 }
 
-/* CSS text fallback — visible immediately while PNG loads */
-#entry-fallback {
-  position: absolute;
-  display: flex; flex-direction: column; align-items: center;
-  z-index: 1; pointer-events: none;
-  opacity: 1; transition: opacity 0.4s ease;
+/* Stack wrapper — fallback and PNG sit in the same grid cell */
+.wm-stack {
+  display: grid;
+  width: min(820px, 88vw);
+  place-items: center;
 }
-#entry-fallback.hidden { opacity: 0; }
+.wm-stack > * { grid-area: 1 / 1; width: 100%; }
+
+/* CSS text fallback — instant, no image dependency */
+#entry-fallback {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  aspect-ratio: 3.22 / 1;  /* match PNG container so grid cell has height */
+  pointer-events: none;
+  opacity: 1; transition: opacity 0.4s ease;
+  z-index: 2;
+}
+#entry-fallback.hidden { opacity: 0; pointer-events: none; }
 .fb-wordmark {
   font-family: 'Cormorant Garamond', serif;
   font-weight: 600;
-  font-size: clamp(64px, 13vw, 160px);
+  font-size: clamp(52px, 11vw, 140px);
   letter-spacing: 0.05em;
   color: #f0ece4;
   line-height: 1;
 }
 .fb-wordmark .fb-apos { color: #c9a84c; }
 .fb-tagline {
-  margin-top: 14px;
+  margin-top: 12px;
   font-family: 'Montserrat', sans-serif;
-  font-size: clamp(8px, 1vw, 11px);
+  font-size: clamp(7px, 0.9vw, 10px);
   font-weight: 200;
   letter-spacing: 0.55em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.2);
 }
-/* PNG wordmark fades in on load */
-.wm-container { opacity: 0; transition: opacity 0.5s ease; }
+/* PNG wordmark — hidden until loaded, sits above fallback */
+.wm-container { opacity: 0; transition: opacity 0.5s ease; z-index: 3; }
 .wm-container.loaded { opacity: 1; }
 
 /* Subtle vignette */
@@ -79,7 +89,6 @@ body { width: 100%; min-height: 100%; background: #080808; overflow: hidden; }
 /* Wordmark container — holds PNG + gem overlay */
 .wm-container {
   position: relative;
-  width: min(820px, 88vw);
   /* PNG aspect ratio 14457:4485 = 3.22:1 */
   aspect-ratio: 3.22 / 1;
   user-select: none;
@@ -548,7 +557,8 @@ footer {
 
 <!-- ─── ENTRY PORTAL ─── -->
 <div id="entry">
-  <!-- Instant CSS fallback shown while PNG loads -->
+  <!-- Stack: fallback + PNG share the same grid cell -->
+  <div class="wm-stack">
   <div id="entry-fallback">
     <div class="fb-wordmark">O<span class="fb-apos">'</span>HERA</div>
     <div class="fb-tagline">Own Your Era</div>
@@ -561,6 +571,7 @@ footer {
     <!-- Ghost mark after gem departs -->
     <div id="gem-ghost">'</div>
   </div>
+  </div><!-- /wm-stack -->
 </div>
 
 <!-- ACCESS THE ERA button -->
@@ -742,12 +753,21 @@ footer {
   const wmContainer = document.querySelector('.wm-container');
   const wmPng = document.querySelector('.wm-logo-png');
   const fallback = document.getElementById('entry-fallback');
+  let wmReady = false;
+
+  const onWmReady = () => {
+    wmReady = true;
+    wmContainer.classList.add('loaded');
+    fallback.classList.add('hidden');
+  };
   if (wmPng) {
-    const showWm = () => {
-      wmContainer.classList.add('loaded');
-      fallback.classList.add('hidden');
-    };
-    wmPng.complete ? showWm() : wmPng.addEventListener('load', showWm);
+    wmPng.complete ? onWmReady() : wmPng.addEventListener('load', onWmReady);
+    wmPng.addEventListener('error', () => {
+      /* PNG failed — keep fallback visible forever */
+      wmReady = true; /* still allow gem launch against fallback */
+    });
+  } else {
+    wmReady = true;
   }
 
   /* ── Detect mobile/touch ── */
@@ -770,7 +790,7 @@ footer {
       gemCursor.style.left = mx + 'px';
       gemCursor.style.top  = my + 'px';
     }
-    if (!gemLaunched) launchGem();
+    if (!gemLaunched && wmReady) launchGem();
   });
 
   /* ── Touch: tap anywhere on entry to trigger vault ── */
