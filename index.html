@@ -602,10 +602,10 @@
       <div>
         <p class="waitlist-label">Join the waitlist</p>
         <div class="form-row">
-          <input type="email" placeholder="your@email.com">
-          <button type="button">Enter</button>
+          <input id="waitlist-email" type="email" placeholder="your@email.com" autocomplete="email">
+          <button id="waitlist-btn" type="button">Enter</button>
         </div>
-        <p class="form-note">First access. Early drops. No noise.</p>
+        <p class="form-note" id="form-note">First access. Early drops. No noise.</p>
       </div>
     </div>
 
@@ -679,6 +679,52 @@
         doorBot.style.display  = 'none';
         btn.style.display      = 'none';
       }, 1700);
+    });
+
+    /* ── Waitlist form ──────────────────────────────── */
+    const waitlistEmail = document.getElementById('waitlist-email');
+    const waitlistBtn   = document.getElementById('waitlist-btn');
+    const formNote      = document.getElementById('form-note');
+
+    waitlistBtn.addEventListener('click', async () => {
+      const email = waitlistEmail.value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        formNote.textContent = 'Please enter a valid email.';
+        formNote.style.color = '#C9A84C';
+        return;
+      }
+
+      waitlistBtn.textContent  = '...';
+      waitlistBtn.disabled     = true;
+      waitlistEmail.disabled   = true;
+
+      try {
+        const res = await fetch('/api/waitlist', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email }),
+        });
+
+        if (res.ok) {
+          waitlistEmail.style.display = 'none';
+          waitlistBtn.style.display   = 'none';
+          formNote.textContent        = 'You\'re in. Welcome to the era.';
+          formNote.style.color        = '#C9A84C';
+          formNote.style.letterSpacing = '0.25em';
+        } else {
+          throw new Error('Server error');
+        }
+      } catch {
+        waitlistBtn.textContent = 'Enter';
+        waitlistBtn.disabled    = false;
+        waitlistEmail.disabled  = false;
+        formNote.textContent    = 'Something went wrong. Try again.';
+        formNote.style.color    = 'rgba(255,255,255,0.4)';
+      }
+    });
+
+    waitlistEmail.addEventListener('keydown', e => {
+      if (e.key === 'Enter') waitlistBtn.click();
     });
 
     /* ── Mobile: touch triggers open directly ───────── */
